@@ -2,6 +2,16 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import time
+import concurrent.futures
+
+# --- Configuration ---
+# The number of parallel threads to use for scraping fight details.
+# Increase this to scrape faster, but be mindful of rate limits.
+MAX_WORKERS = 10
+# The delay in seconds between each request to a fight's detail page.
+# This is a politeness measure to avoid overwhelming the server.
+REQUEST_DELAY = 0.1
+# --- End Configuration ---
 
 BASE_URL = "http://ufcstats.com/statistics/events/completed?page=all"
 
@@ -69,6 +79,20 @@ def scrape_fight_details(fight_url):
 
     return fight_details
 
+def fetch_fight_details_worker(fight_url):
+    """
+    Worker function for the thread pool. Scrapes details for a single fight
+    and applies a delay to be polite to the server.
+    """
+    try:
+        details = scrape_fight_details(fight_url)
+        time.sleep(REQUEST_DELAY)
+        return details
+    except Exception as e:
+        print(f"    Could not scrape fight details for {fight_url}: {e}")
+        time.sleep(REQUEST_DELAY) # Also sleep on failure to be safe
+        return None
+
 def scrape_event_details(event_url):
     print(f"Scraping event: {event_url}")
     soup = get_soup(event_url)
@@ -83,8 +107,8 @@ def scrape_event_details(event_url):
     event_details['date'] = list_items[0].text.split(':')[1].strip()
     event_details['location'] = list_items[1].text.split(':')[1].strip()
 
-    # Extract fights
-    fights = []
+    # Step 1: Gather base info and URLs for all fights on the event page.
+    fights_to_process = []
     fight_table = soup.find('table', class_='b-fight-details__table')
     if fight_table:
         rows = fight_table.find('tbody').find_all('tr', class_='b-fight-details__table-row')
@@ -100,21 +124,26 @@ def scrape_event_details(event_url):
                 'method': ' '.join(cols[7].stripped_strings),
                 'round': cols[8].text.strip(),
                 'time': cols[9].text.strip(),
+                'url': fight_url # Temporarily store the URL for the worker
             }
+            fights_to_process.append(fight)
 
-            try:
-                details = scrape_fight_details(fight_url)
-                if details:
-                    fight['details'] = details
-                else:
-                    fight['details'] = None
-                time.sleep(0.1) # a small delay to be polite to the server
-            except Exception as e:
-                print(f"    Could not scrape fight details for {fight_url}: {e}")
+    # Step 2: Scrape the details for all fights in parallel.
+    fight_urls = [fight['url'] for fight in fights_to_process]
+    completed_fights = []
 
-            fights.append(fight)
-    
-    event_details['fights'] = fights
+    if fight_urls:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            # The map function maintains the order of results.
+            fight_details_list = executor.map(fetch_fight_details_worker, fight_urls)
+
+            for i, details in enumerate(fight_details_list):
+                fight_data = fights_to_process[i]
+                del fight_data['url']  # Clean up the temporary URL
+                fight_data['details'] = details if details else None
+                completed_fights.append(fight_data)
+
+    event_details['fights'] = completed_fights
     return event_details
 
 def scrape_all_events():

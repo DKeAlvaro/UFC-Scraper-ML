@@ -83,5 +83,60 @@ def json_to_csv(json_file_path, csv_file_path):
 
     print(f"Successfully converted {json_file_path} to {csv_file_path}")
 
+def fighters_json_to_csv(json_file_path, csv_file_path):
+    """
+    Converts a JSON file containing a list of fighter data to a CSV file.
+    It cleans the data by removing unwanted characters and standardizing formats.
+    """
+    try:
+        with open(json_file_path, 'r', encoding='utf-8') as json_file:
+            data = json.load(json_file)
+    except FileNotFoundError:
+        print(f"Error: The file {json_file_path} was not found.")
+        return
+    except json.JSONDecodeError:
+        print(f"Error: Could not decode JSON from {json_file_path}.")
+        return
+
+    if not data:
+        print(f"Warning: The file {json_file_path} is empty. No CSV will be created.")
+        return
+        
+    # Dynamically determine headers by collecting all keys from all records
+    all_keys = set()
+    for item in data:
+        all_keys.update(item.keys())
+    
+    # Define a preferred order for the most important columns
+    preferred_headers = [
+        'first_name', 'last_name', 'nickname', 'wins', 'losses', 'draws', 'belt',
+        'height', 'weight_lbs', 'reach_in', 'stance', 'dob', 'slpm', 
+        'str_acc', 'sapm', 'str_def', 'td_avg', 'td_acc', 'td_def', 'sub_avg', 'url'
+    ]
+    
+    # Create the final list of headers, with preferred ones first
+    headers = [h for h in preferred_headers if h in all_keys]
+    headers.extend(sorted([k for k in all_keys if k not in preferred_headers]))
+
+    def clean_value(value):
+        if isinstance(value, str):
+            # Clean data by removing unwanted characters and standardizing units
+            # As requested, this removes '"' and '--'. It also cleans up units.
+            cleaned_value = value.replace('--', '').replace('"', '').replace("'", " ft").replace(' lbs.', '')
+            return cleaned_value.strip()
+        return value
+
+    with open(csv_file_path, 'w', newline='', encoding='utf-8') as csv_file:
+        writer = csv.DictWriter(csv_file, fieldnames=headers)
+        writer.writeheader()
+
+        for fighter_data in data:
+            # Get a cleaned version of the row, using get() for safety
+            cleaned_row = {key: clean_value(fighter_data.get(key, '')) for key in headers}
+            writer.writerow(cleaned_row)
+
+    print(f"Successfully converted {json_file_path} to {csv_file_path}")
+
 if __name__ == '__main__':
     json_to_csv('output/ufc_events_detailed.json', 'output/ufc_fights.csv') 
+    fighters_json_to_csv('output/fighters_data.json', 'output/ufc_fighters_data.csv') 
