@@ -64,7 +64,8 @@ class PredictionPipeline:
                 f1_name, f2_name = fight['fighter_1'], fight['fighter_2']
                 actual_winner = fight['winner']
                 event_name = fight.get('event_name', 'Unknown Event')
-                predicted_winner = model.predict(f1_name, f2_name)
+                
+                predicted_winner = model.predict(fight)
                 
                 is_correct = (predicted_winner == actual_winner)
                 if is_correct:

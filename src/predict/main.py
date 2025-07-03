@@ -1,30 +1,37 @@
-from .models import EloBaselineModel
+import argparse
+from .models import EloBaselineModel, LogisticRegressionModel
 from .pipeline import PredictionPipeline
 
 def main():
     """
-    Sets up the models and runs the prediction pipeline.
-    This is where you can add new models to compare them.
+    Main entry point to run the prediction pipeline.
+    You can specify which models to run and the reporting format.
     """
-    print("--- Initializing Machine Learning Prediction Pipeline ---")
+    parser = argparse.ArgumentParser(description="UFC Fight Prediction Pipeline")
+    parser.add_argument(
+        '--report', 
+        type=str, 
+        default='detailed', 
+        choices=['detailed', 'summary'],
+        help="Type of report to generate: 'detailed' (file) or 'summary' (console)."
+    )
+    args = parser.parse_args()
 
-    # 1. Initialize the models you want to test
-    elo_model = EloBaselineModel()
-    
-    # Add other models here to compare them, e.g.:
-    # logistic_model = LogisticRegressionModel()
-    
-    # 2. Create a list of the models to evaluate
+    # --- Define Models to Run ---
+    # Instantiate all the models you want to evaluate here.
     models_to_run = [
-        elo_model,
-        # logistic_model
+        EloBaselineModel(),
+        LogisticRegressionModel(),
     ]
+    # --- End of Model Definition ---
 
-    # 3. Initialize and run the pipeline
     pipeline = PredictionPipeline(models=models_to_run)
     
-    # Set detailed_report=False for a summary, or True for a full detailed report
-    pipeline.run(detailed_report=True)
+    try:
+        pipeline.run(detailed_report=(args.report == 'detailed'))
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+        print("Please ensure the required data files exist. You may need to run the scraping and ELO analysis first.")
 
 if __name__ == '__main__':
     main() 

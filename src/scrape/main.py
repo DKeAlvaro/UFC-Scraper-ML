@@ -8,37 +8,29 @@ from .. import config
 
 def main():
     """
-    Main pipeline to scrape UFC data and convert it to CSV.
+    Main function to run the complete scraping and preprocessing pipeline.
     """
     # Ensure the output directory exists
     if not os.path.exists(config.OUTPUT_DIR):
         os.makedirs(config.OUTPUT_DIR)
         print(f"Created directory: {config.OUTPUT_DIR}")
 
-    # --- Step 1: Scrape Events and Fights ---
-    print("\n--- Starting Events and Fights Scraping ---")
-    all_events_data = scrape_all_events()
-    with open(config.EVENTS_JSON_PATH, 'w') as f:
-        json.dump(all_events_data, f, indent=4)
-    print(f"Scraping for events complete. Data saved to {config.EVENTS_JSON_PATH}")
+    # --- Step 1: Scrape all data from the website ---
+    # This will generate fighters.json and events.json
+    scrape_all_fighters()
+    scrape_all_events()
 
-    # --- Step 2: Scrape Fighters ---
-    print("\n--- Starting Fighters Scraping ---")
-    all_fighters_data = scrape_all_fighters()
-    with open(config.FIGHTERS_JSON_PATH, 'w') as f:
-        json.dump(all_fighters_data, f, indent=4)
-    print(f"Scraping for fighters complete. Data saved to {config.FIGHTERS_JSON_PATH}")
-
-    # --- Step 3: Convert JSON to CSV ---
-    print("\n--- Converting all JSON files to CSV ---")
+    # --- Step 2: Convert the scraped JSON data to CSV format ---
+    # This will generate fighters.csv and fights.csv
     json_to_csv(config.EVENTS_JSON_PATH, config.FIGHTS_CSV_PATH)
     fighters_json_to_csv(config.FIGHTERS_JSON_PATH, config.FIGHTERS_CSV_PATH)
 
-    # --- Step 4: Preprocess CSV data ---
-    print("\n--- Preprocessing fighter data (converting height to cm) ---")
-    preprocess_fighters_csv(config.FIGHTERS_CSV_PATH)
+    # --- Step 3: Run post-processing on the generated CSV files ---
+    # This cleans names, converts height, etc.
+    print("\n--- Running post-scraping preprocessing ---")
+    preprocess_fighters_csv()
 
-    # --- Step 5: Clean up temporary JSON files ---
+    # --- Step 4: Clean up temporary JSON files ---
     print("\n--- Deleting temporary JSON files ---")
     try:
         if os.path.exists(config.EVENTS_JSON_PATH):
@@ -50,7 +42,7 @@ def main():
     except OSError as e:
         print(f"Error deleting JSON files: {e}")
 
-    print("\n--- Pipeline Finished ---")
+    print("\n\n--- Scraping and Preprocessing Pipeline Finished ---")
 
 if __name__ == '__main__':
     main()

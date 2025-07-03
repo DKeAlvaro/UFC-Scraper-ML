@@ -26,7 +26,7 @@ def convert_height_to_cm(height_str):
 
 def preprocess_fighters_csv(file_path=config.FIGHTERS_CSV_PATH):
     """
-    Reads the fighters CSV, converts height to cm, renames the column,
+    Reads the fighters CSV, cleans names, converts height to cm, 
     and saves the changes back to the same file.
     """
     if not os.path.exists(file_path):
@@ -46,18 +46,24 @@ def preprocess_fighters_csv(file_path=config.FIGHTERS_CSV_PATH):
             headers = reader.fieldnames
             rows = list(reader)
 
-        # Check if there's a 'height' column to process
-        if 'height' not in headers:
-            print("No 'height' column found. Nothing to do.")
-            return
-
+        # --- Data Cleaning and Processing ---
+        
+        name_cleaned_count = 0
         # Process the rows in memory
         for row in rows:
-            # Create a new key for the converted height and remove the old one
-            row['height_cm'] = convert_height_to_cm(row.pop('height', ''))
+            # Clean fighter names (e.g., "O ftMalley" -> "O'Malley")
+            for col in ['first_name', 'last_name']:
+                if col in row and ' ft' in row[col]:
+                    row[col] = row[col].replace(' ft', "'")
+                    name_cleaned_count += 1
 
-        # Update the header name
-        headers[headers.index('height')] = 'height_cm'
+            # Convert height to cm and remove the old column
+            if 'height' in row:
+                row['height_cm'] = convert_height_to_cm(row.pop('height'))
+
+        # Update the header name if 'height' was present
+        if 'height' in headers:
+            headers[headers.index('height')] = 'height_cm'
 
         # Write the modified data back to the same file, overwriting it
         with open(file_path, 'w', newline='', encoding='utf-8') as csv_file:
@@ -66,7 +72,10 @@ def preprocess_fighters_csv(file_path=config.FIGHTERS_CSV_PATH):
             writer.writerows(rows)
 
         print(f"Successfully processed file: {file_path}")
-        print("Converted 'height' column to centimeters and renamed it to 'height_cm'.")
+        if name_cleaned_count > 0:
+            print(f"Cleaned {name_cleaned_count} instances of ' ft' in fighter names.")
+        if 'height_cm' in headers:
+            print("Converted 'height' column to centimeters and renamed it to 'height_cm'.")
 
     except Exception as e:
         print(f"An error occurred: {e}")
