@@ -24,7 +24,7 @@ def main():
     pipeline = PredictionPipeline(models=models_to_run)
     
     # Set detailed_report=False for a summary, or True for a full detailed report
-    pipeline.run(detailed_report=False)
+    pipeline.run(detailed_report=True)
 
 if __name__ == '__main__':
     main() 

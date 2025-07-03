@@ -5,7 +5,7 @@ import time
 import string
 import concurrent.futures
 import os
-import config
+from .. import config
 
 # --- Configuration ---
 # The number of parallel threads to use for scraping fighter details.

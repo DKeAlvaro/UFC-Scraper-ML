@@ -3,7 +3,9 @@ import os
 import sys
 from datetime import datetime
 from collections import OrderedDict
-from ..scrape.config import FIGHTS_CSV_PATH
+import json
+
+from ..config import FIGHTS_CSV_PATH, MODEL_RESULTS_PATH
 from .models import BaseModel
 
 class PredictionPipeline:
@@ -61,6 +63,7 @@ class PredictionPipeline:
             for fight in eval_fights:
                 f1_name, f2_name = fight['fighter_1'], fight['fighter_2']
                 actual_winner = fight['winner']
+                event_name = fight.get('event_name', 'Unknown Event')
                 predicted_winner = model.predict(f1_name, f2_name)
                 
                 is_correct = (predicted_winner == actual_winner)
@@ -69,6 +72,7 @@ class PredictionPipeline:
                 
                 predictions.append({
                     'fight': f"{f1_name} vs. {f2_name}",
+                    'event': event_name,
                     'predicted_winner': predicted_winner,
                     'actual_winner': actual_winner,
                     'is_correct': is_correct
@@ -95,17 +99,38 @@ class PredictionPipeline:
             print(f"{model_name:<25} | {result['accuracy']:<9.2f}% | {result['total_fights']:<20}")
         print("-" * 65)
 
+    def _save_report_to_json(self, file_path=MODEL_RESULTS_PATH):
+        """Saves the detailed prediction results to a JSON file."""
+        print(f"\nSaving detailed report to {file_path}...")
+        try:
+            # Create a report structure that is clean and JSON-friendly
+            report = {}
+            for model_name, result in self.results.items():
+                
+                # Group predictions by event for a more organized report
+                predictions_by_event = {}
+                for p in result['predictions']:
+                    event_name = p.pop('event') # Extract event and remove it from the sub-dictionary
+                    if event_name not in predictions_by_event:
+                        predictions_by_event[event_name] = []
+                    predictions_by_event[event_name].append(p)
+
+                report[model_name] = {
+                    "overall_accuracy": f"{result['accuracy']:.2f}%",
+                    "total_fights_evaluated": result['total_fights'],
+                    "predictions_by_event": predictions_by_event
+                }
+
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(report, f, indent=4)
+            print("Report saved successfully.")
+        except (IOError, TypeError) as e:
+            print(f"Error saving report to JSON file: {e}")
+
     def _report_detailed_results(self):
-        """Prints a summary and detailed report of the model evaluations."""
+        """Prints a summary and saves the detailed report to a file."""
         print("\n\n--- Prediction Pipeline Finished: Detailed Report ---")
-        for model_name, result in self.results.items():
-            print(f"\n--- Model: {model_name} ---")
-            print(f"  Overall Accuracy: {result['accuracy']:.2f}%")
-            print("  Detailed Predictions:")
-            for p in result['predictions']:
-                status = "CORRECT" if p['is_correct'] else "INCORRECT"
-                print(f"    - Fight: {p['fight']}")
-                print(f"      -> Predicted: {p['predicted_winner']}")
-                print(f"      -> Actual:    {p['actual_winner']}")
-                print(f"      -> Result: {status}")
-            print("------------------------" + "-" * len(model_name)) 
+        # A summary is printed to the console for convenience.
+        self._report_summary()
+        # The detailed report is now saved to a JSON file.
+        self._save_report_to_json() 

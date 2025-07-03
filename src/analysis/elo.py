@@ -1,9 +1,8 @@
 import csv
 import os
 from datetime import datetime
-import sys
 
-from ..scrape.config import FIGHTS_CSV_PATH, FIGHTERS_CSV_PATH
+from ..config import FIGHTS_CSV_PATH, FIGHTERS_CSV_PATH
 
 # --- ELO Configuration ---
 INITIAL_ELO = 1500

@@ -1,6 +1,6 @@
 import csv
 import os
-import config
+from .. import config
 
 def convert_height_to_cm(height_str):
     """

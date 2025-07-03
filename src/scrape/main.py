@@ -1,10 +1,10 @@
 import os
 import json
-from scrape_fights import scrape_all_events
-from scrape_fighters import scrape_all_fighters
-from to_csv import json_to_csv, fighters_json_to_csv
-from preprocess import preprocess_fighters_csv
-import config
+from .scrape_fights import scrape_all_events
+from .scrape_fighters import scrape_all_fighters
+from .to_csv import json_to_csv, fighters_json_to_csv
+from .preprocess import preprocess_fighters_csv
+from .. import config
 
 def main():
     """

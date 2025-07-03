@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import json
 import time
 import concurrent.futures
-from config import EVENTS_JSON_PATH
+from ..config import EVENTS_JSON_PATH
 
 # --- Configuration ---
 # The number of parallel threads to use for scraping fight details.

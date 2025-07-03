@@ -1,6 +1,6 @@
 import json
 import csv
-import config
+from .. import config
 
 def json_to_csv(json_file_path, csv_file_path):
     try:
