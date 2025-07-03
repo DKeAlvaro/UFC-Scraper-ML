@@ -45,7 +45,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--model_path', 
         type=str, 
-        default=os.path.join(OUTPUT_DIR, 'trained_model.joblib'),
+        default=os.path.join(OUTPUT_DIR, 'XGBoostModel.joblib'),
         help="Path to the saved model file."
     )
     args = parser.parse_args()

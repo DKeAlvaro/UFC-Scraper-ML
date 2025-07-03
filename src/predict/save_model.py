@@ -34,7 +34,8 @@ def save_model(model_name):
     model.train(all_fights)
 
     # 4. Save the entire trained model object
-    save_path = os.path.join(OUTPUT_DIR, 'trained_model.joblib')
+    model_name_to_save=f"{model_name}.joblib"
+    save_path = os.path.join(OUTPUT_DIR, model_name_to_save)
     joblib.dump(model, save_path)
 
     print(f"\nModel saved successfully to {save_path}")
