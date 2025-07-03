@@ -84,4 +84,4 @@ def json_to_csv(json_file_path, csv_file_path):
     print(f"Successfully converted {json_file_path} to {csv_file_path}")
 
 if __name__ == '__main__':
-    json_to_csv('ufc_events_detailed.json', 'ufc_fights.csv') 
+    json_to_csv('output/ufc_events_detailed.json', 'output/ufc_fights.csv') 
