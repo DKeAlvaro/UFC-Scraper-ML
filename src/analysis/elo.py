@@ -1,10 +1,13 @@
 import csv
 import os
 from datetime import datetime
+import sys
+
+from ..scrape.config import FIGHTS_CSV_PATH, FIGHTERS_CSV_PATH
 
 # --- ELO Configuration ---
 INITIAL_ELO = 1500
-K_FACTOR = 32
+K_FACTOR = 40
 # --- End Configuration ---
 
 def calculate_expected_score(rating1, rating2):
@@ -27,7 +30,7 @@ def update_elo_draw(elo1, elo2):
 
     return elo1 + change1, elo2 + change2
 
-def process_fights_for_elo(fights_csv_path='output/ufc_fights.csv'):
+def process_fights_for_elo(fights_csv_path=FIGHTS_CSV_PATH):
     """
     Processes all fights chronologically to calculate final ELO scores for all fighters.
     """
@@ -70,7 +73,7 @@ def process_fights_for_elo(fights_csv_path='output/ufc_fights.csv'):
 
     return elos
 
-def add_elo_to_fighters_csv(elos, fighters_csv_path='output/ufc_fighters.csv'):
+def add_elo_to_fighters_csv(elos, fighters_csv_path=FIGHTERS_CSV_PATH):
     """
     Adds the final ELO scores as a new column to the fighters CSV data.
     """

@@ -1,25 +1,15 @@
-import json
 import pandas as pd
 
-ufc_events = json.load(open('output/ufc_fights.json'))
-ufc_events_csv = pd.read_csv('output/ufc_fights.csv')
-ufc_fighters_csv = pd.read_csv('output/ufc_fighters.csv')
+ufc_fights = pd.read_csv('output/ufc_fights.csv')
+ufc_fighters = pd.read_csv('output/ufc_fighters.csv')
 
+print(f"Number of fighters registered in UFC: {len(ufc_fighters)}")
+unique_fighters=set()
+for fight in ufc_fights['fighter_1']:
+    unique_fighters.add(fight)
+for fight in ufc_fights['fighter_2']:
+    unique_fighters.add(fight)
+print(f"Number of fighters who have at least one fight: {len(unique_fighters)}")
 
-unique_fighters = set()
-
-for event in ufc_events:
-    for fight in event['fights']:
-        unique_fighters.add(fight['fighter_1'])
-        unique_fighters.add(fight['fighter_2'])
-
-unique_fighters_csv=set()
-for fight in ufc_events_csv['fighter_1']:
-    unique_fighters_csv.add(fight)
-for fight in ufc_events_csv['fighter_2']:
-    unique_fighters_csv.add(fight)
-
-print(len(unique_fighters))
-print(len(unique_fighters_csv))
-
-
+highest_elo_fighters=ufc_fighters.sort_values(by='elo', ascending=False).head(20)
+print(highest_elo_fighters)
