@@ -30,23 +30,32 @@ def update_elo_draw(elo1, elo2):
 
     return elo1 + change1, elo2 + change2
 
-def process_fights_for_elo(fights_csv_path=FIGHTS_CSV_PATH):
+def process_fights_for_elo(fights_data=FIGHTS_CSV_PATH):
     """
-    Processes all fights chronologically to calculate final ELO scores for all fighters.
+    Processes fights chronologically to calculate ELO scores.
+    Accepts either a CSV file path or a pre-loaded list of fights.
     """
-    if not os.path.exists(fights_csv_path):
-        print(f"Error: Fights data file not found at '{fights_csv_path}'.")
-        print("Please run the scraping pipeline first using 'src/scrape/main.py'.")
+    fights = []
+    if isinstance(fights_data, str):
+        # If a string is passed, treat it as a file path
+        if not os.path.exists(fights_data):
+            print(f"Error: Fights data file not found at '{fights_data}'.")
+            return None
+        with open(fights_data, 'r', encoding='utf-8') as f:
+            fights = list(csv.DictReader(f))
+    elif isinstance(fights_data, list):
+        # If a list is passed, use it directly
+        fights = fights_data
+    else:
+        print(f"Error: Invalid data type passed to process_fights_for_elo: {type(fights_data)}")
         return None
 
-    with open(fights_csv_path, 'r', encoding='utf-8') as f:
-        fights = list(csv.DictReader(f))
-
-    # Sort fights by date to process them in chronological order
+    # Sort fights by date to process them in chronological order.
+    # This is crucial if loading from a file and a good safeguard if a list is passed.
     try:
         fights.sort(key=lambda x: datetime.strptime(x['event_date'], '%B %d, %Y'))
     except (ValueError, KeyError) as e:
-        print(f"Error sorting fights by date. Make sure 'event_date' exists and is in 'Month Day, Year' format. Error: {e}")
+        print(f"Error sorting fights by date: {e}")
         return None
         
     elos = {}
