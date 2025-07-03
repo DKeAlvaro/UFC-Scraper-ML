@@ -17,16 +17,16 @@ def main():
 
     # --- Step 1: Scrape Events and Fights ---
     print("\n--- Starting Events and Fights Scraping ---")
-    # all_events_data = scrape_all_events()
-    # with open(config.EVENTS_JSON_PATH, 'w') as f:
-    #     json.dump(all_events_data, f, indent=4)
+    all_events_data = scrape_all_events()
+    with open(config.EVENTS_JSON_PATH, 'w') as f:
+        json.dump(all_events_data, f, indent=4)
     print(f"Scraping for events complete. Data saved to {config.EVENTS_JSON_PATH}")
 
     # --- Step 2: Scrape Fighters ---
     print("\n--- Starting Fighters Scraping ---")
-    # all_fighters_data = scrape_all_fighters()
-    # with open(config.FIGHTERS_JSON_PATH, 'w') as f:
-    #     json.dump(all_fighters_data, f, indent=4)
+    all_fighters_data = scrape_all_fighters()
+    with open(config.FIGHTERS_JSON_PATH, 'w') as f:
+        json.dump(all_fighters_data, f, indent=4)
     print(f"Scraping for fighters complete. Data saved to {config.FIGHTERS_JSON_PATH}")
 
     # --- Step 3: Convert JSON to CSV ---
