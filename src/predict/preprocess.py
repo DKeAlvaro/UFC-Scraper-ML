@@ -122,7 +122,12 @@ def preprocess_for_ml(fights_to_process, fighters_csv_path):
     # 2. Pre-calculate fighter histories to speed up lookups
     # And convert date strings to datetime objects once
     for fight in fights_to_process:
-        fight['date_obj'] = datetime.strptime(fight['event_date'], '%B %d, %Y')
+        try:
+            # This will work if event_date is a string
+            fight['date_obj'] = datetime.strptime(fight['event_date'], '%B %d, %Y')
+        except TypeError:
+            # This will be triggered if it's already a date-like object (e.g., Timestamp)
+            fight['date_obj'] = fight['event_date']
     
     fighter_histories = {}
     for fighter_name in fighters_prepared.index:

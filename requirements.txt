@@ -1,4 +1,8 @@
 requests
 beautifulsoup4
 pandas
-scikit-learn 
+scikit-learn
+lazypredict
+tqdm
+xgboost
+lightgbm 

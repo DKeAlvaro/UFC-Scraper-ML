@@ -1,6 +1,14 @@
 import argparse
-from .models import EloBaselineModel, LogisticRegressionModel
 from .pipeline import PredictionPipeline
+from .models import (
+    EloBaselineModel, 
+    LogisticRegressionModel, 
+    XGBoostModel,
+    SVCModel,
+    RandomForestModel,
+    BernoulliNBModel,
+    LGBMModel
+)
 
 def main():
     """
@@ -22,6 +30,11 @@ def main():
     models_to_run = [
         EloBaselineModel(),
         LogisticRegressionModel(),
+        XGBoostModel(),
+        SVCModel(),
+        RandomForestModel(),
+        BernoulliNBModel(),
+        LGBMModel(),
     ]
     # --- End of Model Definition ---
 
