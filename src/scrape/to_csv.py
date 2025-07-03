@@ -1,5 +1,6 @@
 import json
 import csv
+import config
 
 def json_to_csv(json_file_path, csv_file_path):
     try:
@@ -14,7 +15,7 @@ def json_to_csv(json_file_path, csv_file_path):
 
     # Define the headers for the CSV file
     headers = [
-        'event_name', 'event_date', 'event_location', 'fighter_1', 'fighter_2', 
+        'event_name', 'event_date', 'event_location', 'fighter_1', 'fighter_2', 'winner',
         'weight_class', 'method', 'round', 'time',
         'f1_kd', 'f1_sig_str', 'f1_sig_str_percent', 'f1_total_str', 'f1_td', 
         'f1_td_percent', 'f1_sub_att', 'f1_rev', 'f1_ctrl',
@@ -44,6 +45,7 @@ def json_to_csv(json_file_path, csv_file_path):
                     event.get('location', ''),
                     fight.get('fighter_1', ''),
                     fight.get('fighter_2', ''),
+                    fight.get('winner', ''),
                     fight.get('weight_class', ''),
                     fight.get('method', ''),
                     fight.get('round', ''),
@@ -138,5 +140,5 @@ def fighters_json_to_csv(json_file_path, csv_file_path):
     print(f"Successfully converted {json_file_path} to {csv_file_path}")
 
 if __name__ == '__main__':
-    json_to_csv('output/ufc_events_detailed.json', 'output/ufc_fights.csv') 
-    fighters_json_to_csv('output/fighters_data.json', 'output/ufc_fighters_data.csv') 
+    json_to_csv(config.EVENTS_JSON_PATH, config.FIGHTS_CSV_PATH) 
+    fighters_json_to_csv(config.FIGHTERS_JSON_PATH, config.FIGHTERS_CSV_PATH) 

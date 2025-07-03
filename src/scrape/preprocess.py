@@ -1,5 +1,6 @@
 import csv
 import os
+import config
 
 def convert_height_to_cm(height_str):
     """
@@ -23,7 +24,7 @@ def convert_height_to_cm(height_str):
         # Return original value if parsing fails
         return height_str
 
-def preprocess_fighters_csv(file_path='output/ufc_fighters_data.csv'):
+def preprocess_fighters_csv(file_path=config.FIGHTERS_CSV_PATH):
     """
     Reads the fighters CSV, converts height to cm, renames the column,
     and saves the changes back to the same file.
@@ -71,4 +72,4 @@ def preprocess_fighters_csv(file_path='output/ufc_fighters_data.csv'):
         print(f"An error occurred: {e}")
 
 if __name__ == '__main__':
-    preprocess_fighters_csv()
+    preprocess_fighters_csv() 

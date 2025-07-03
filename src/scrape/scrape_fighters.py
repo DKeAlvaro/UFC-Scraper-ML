@@ -4,6 +4,8 @@ import json
 import time
 import string
 import concurrent.futures
+import os
+import config
 
 # --- Configuration ---
 # The number of parallel threads to use for scraping fighter details.
@@ -126,25 +128,19 @@ def scrape_all_fighters():
             print(f"Progress: {i + 1}/{total_fighters} fighters scraped.")
 
             if (i + 1) > 0 and (i + 1) % 50 == 0:
-                print(f"--- Saving progress: {i + 1} fighters saved. ---")
-                # Sort before saving to maintain a consistent order in the file
                 fighters_with_details.sort(key=lambda x: (x['last_name'], x['first_name']))
-                with open('output/fighters_data.json', 'w') as f:
+                with open(config.FIGHTERS_JSON_PATH, 'w') as f:
                     json.dump(fighters_with_details, f, indent=4)
                 
-    # Final sort for the complete dataset
     fighters_with_details.sort(key=lambda x: (x['last_name'], x['first_name']))
     return fighters_with_details
 
 if __name__ == "__main__":
     all_fighters_data = scrape_all_fighters()
-    
-    # Create output directory if it doesn't exist
-    import os
-    if not os.path.exists('output'):
-        os.makedirs('output')
+    if not os.path.exists(config.OUTPUT_DIR):
+        os.makedirs(config.OUTPUT_DIR)
 
-    with open('output/fighters_data.json', 'w') as f:
+    with open(config.FIGHTERS_JSON_PATH, 'w') as f:
         json.dump(all_fighters_data, f, indent=4)
         
-    print(f"\nScraping complete. Final data for {len(all_fighters_data)} fighters saved to output/fighters_data.json") 
+    print(f"\nScraping complete. Final data for {len(all_fighters_data)} fighters saved to {config.FIGHTERS_JSON_PATH}") 

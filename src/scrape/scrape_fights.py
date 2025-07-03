@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import json
 import time
 import concurrent.futures
+from config import EVENTS_JSON_PATH
 
 # --- Configuration ---
 # The number of parallel threads to use for scraping fight details.
@@ -114,17 +115,45 @@ def scrape_event_details(event_url):
         rows = fight_table.find('tbody').find_all('tr', class_='b-fight-details__table-row')
         for row in rows:
             cols = row.find_all('td', class_='b-fight-details__table-col')
+
+            fighter1 = cols[1].find_all('p')[0].text.strip()
+            fighter2 = cols[1].find_all('p')[1].text.strip()
+
+            # Determine the winner from the W/L column based on the example provided.
+            winner = None
+            result_ps = cols[0].find_all('p')
             
-            fight_url = row['data-link']
+            # This logic handles the structure seen in the example file.
+            if len(result_ps) == 1:
+                result_text = result_ps[0].text.strip().lower()
+                if 'win' in result_text:
+                    # When one 'win' is present, it corresponds to the first fighter listed.
+                    winner = fighter1
+                elif 'draw' in result_text:
+                    winner = "Draw"
+                elif 'nc' in result_text:
+                    winner = "NC"
             
+            # This is a defensive case in case the structure has two <p> tags.
+            elif len(result_ps) == 2:
+                if 'win' in result_ps[0].text.strip().lower():
+                    winner = fighter1
+                elif 'win' in result_ps[1].text.strip().lower():
+                    winner = fighter2
+                elif 'draw' in result_ps[0].text.strip().lower():
+                    winner = "Draw"
+                elif 'nc' in result_ps[0].text.strip().lower():
+                    winner = "NC"
+
             fight = {
-                'fighter_1': cols[1].find_all('p')[0].text.strip(),
-                'fighter_2': cols[1].find_all('p')[1].text.strip(),
+                'fighter_1': fighter1,
+                'fighter_2': fighter2,
+                'winner': winner,
                 'weight_class': cols[6].text.strip(),
                 'method': ' '.join(cols[7].stripped_strings),
                 'round': cols[8].text.strip(),
                 'time': cols[9].text.strip(),
-                'url': fight_url # Temporarily store the URL for the worker
+                'url': row['data-link']
             }
             fights_to_process.append(fight)
 
@@ -171,11 +200,11 @@ def scrape_all_events():
             if event_data:
                 events.append(event_data)
             
-            print(f"Progress: {i}/{total_events} events scraped.")
+            print(f"Progress: {i+1}/{total_events} events scraped.")
 
             if (i + 1) % 10 == 0:
                 print(f"--- Saving progress: {i + 1} of {total_events} events saved. ---")
-                with open('ufc_events_detailed.json', 'w') as f:
+                with open(EVENTS_JSON_PATH, 'w') as f:
                     json.dump(events, f, indent=4)
         except Exception as e:
             print(f"Could not process event {event_url}. Error: {e}")
@@ -184,6 +213,6 @@ def scrape_all_events():
 
 if __name__ == "__main__":
     all_events_data = scrape_all_events()
-    with open('ufc_events_detailed.json', 'w') as f:
+    with open(EVENTS_JSON_PATH, 'w') as f:
         json.dump(all_events_data, f, indent=4)
-    print("\nScraping complete. Final data saved to ufc_events_detailed.json")
+    print(f"\nScraping complete. Final data saved to {EVENTS_JSON_PATH}")
