@@ -66,8 +66,10 @@ class PredictionPipeline:
                 actual_winner = fight['winner']
                 event_name = fight.get('event_name', 'Unknown Event')
                 
-                predicted_winner = model.predict(fight)
-                
+                prediction_result = model.predict(fight)
+                predicted_winner = prediction_result.get('winner')
+                probability = prediction_result.get('probability')
+
                 is_correct = (predicted_winner == actual_winner)
                 if is_correct:
                     correct_predictions += 1
@@ -76,6 +78,7 @@ class PredictionPipeline:
                     'fight': f"{f1_name} vs. {f2_name}",
                     'event': event_name,
                     'predicted_winner': predicted_winner,
+                    'probability': f"{probability:.1%}" if probability is not None else "N/A",
                     'actual_winner': actual_winner,
                     'is_correct': is_correct
                 })

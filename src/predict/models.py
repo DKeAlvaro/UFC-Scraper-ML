@@ -54,19 +54,24 @@ class EloBaselineModel(BaseModel):
         self.fighters_df = self.fighters_df.drop_duplicates(subset=['full_name']).set_index('full_name')
 
     def predict(self, fight):
-        """Predicts the winner based on who has the higher ELO score."""
+        """Predicts the winner based on ELO and calculates win probability."""
         f1_name, f2_name = fight['fighter_1'], fight['fighter_2']
         
         try:
             f1_elo = self.fighters_df.loc[f1_name, 'elo']
             f2_elo = self.fighters_df.loc[f2_name, 'elo']
             
-            return f1_name if f1_elo > f2_elo else f2_name
+            # Calculate win probability for fighter 1 using the ELO formula
+            prob_f1_wins = 1 / (1 + 10**((f2_elo - f1_elo) / 400))
+
+            if prob_f1_wins >= 0.5:
+                return {'winner': f1_name, 'probability': prob_f1_wins}
+            else:
+                return {'winner': f2_name, 'probability': 1 - prob_f1_wins}
+
         except KeyError as e:
-            # If a fighter isn't found, we can't make a prediction.
-            # Returning None or a default is a design choice.
             print(f"Warning: Could not find ELO for fighter {e}. Skipping prediction.")
-            return None
+            return {'winner': None, 'probability': None}
 
 class BaseMLModel(BaseModel):
     """
@@ -112,14 +117,14 @@ class BaseMLModel(BaseModel):
 
     def predict(self, fight):
         """
-        Predicts the outcome of a single fight by generating its feature vector.
+        Predicts the outcome of a single fight, returning the winner and probability.
         """
         f1_name, f2_name = fight['fighter_1'], fight['fighter_2']
         fight_date = pd.to_datetime(fight['event_date'])
 
         if f1_name not in self.fighters_df.index or f2_name not in self.fighters_df.index:
             print(f"Warning: Fighter not found. Skipping prediction for {f1_name} vs {f2_name}")
-            return None
+            return {'winner': None, 'probability': None}
 
         f1_stats = self.fighters_df.loc[f1_name]
         f2_stats = self.fighters_df.loc[f2_name]
@@ -149,8 +154,15 @@ class BaseMLModel(BaseModel):
         }
         
         feature_vector = pd.DataFrame([features]).fillna(0)
-        prediction = self.model.predict(feature_vector)[0]
-        return f1_name if prediction == 1 else f2_name
+        
+        # Use predict_proba to get probabilities for each class
+        probabilities = self.model.predict_proba(feature_vector)[0]
+        prob_f1_wins = probabilities[1]  # Probability of class '1' (fighter 1 wins)
+
+        if prob_f1_wins >= 0.5:
+            return {'winner': f1_name, 'probability': prob_f1_wins}
+        else:
+            return {'winner': f2_name, 'probability': 1 - prob_f1_wins}
 
 class LogisticRegressionModel(BaseMLModel):
     """A thin wrapper for scikit-learn's LogisticRegression."""

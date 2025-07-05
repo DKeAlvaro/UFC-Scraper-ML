@@ -54,10 +54,12 @@ def predict_fight(model_name, fighter1_name, fighter2_name):
             'event_date': datetime.now().strftime('%B %d, %Y')
         }
 
-        predicted_winner = model.predict(fight)
+        prediction_result = model.predict(fight)
         
-        if predicted_winner:
-            return f"Predicted Winner: {predicted_winner}"
+        if prediction_result and prediction_result.get('winner'):
+            winner = prediction_result['winner']
+            prob = prediction_result['probability']
+            return f"Predicted Winner: {winner} ({prob:.1%})"
         else:
             return "Could not make a prediction. Is one of the fighters new or not in the dataset?"
             

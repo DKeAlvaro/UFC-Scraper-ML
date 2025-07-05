@@ -31,10 +31,12 @@ def predict_new_fight(fighter1_name, fighter2_name, model_path):
 
     # 3. Make the prediction
     print(f"\nPredicting winner for: {fighter1_name} vs. {fighter2_name}")
-    predicted_winner = model.predict(fight)
+    prediction_result = model.predict(fight)
     
-    if predicted_winner:
-        print(f"\n---> Predicted Winner: {predicted_winner} <---")
+    if prediction_result and prediction_result.get('winner'):
+        winner = prediction_result['winner']
+        prob = prediction_result['probability']
+        print(f"\n---> Predicted Winner: {winner} ({prob:.1%}) <---")
     else:
         print("\nCould not make a prediction. One of the fighters may not be in the dataset.")
 
