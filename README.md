@@ -10,6 +10,8 @@ pinned: false
 ---
 # UFC Scraper & ML
 
+[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/AlvaroMros/ufc-predictor)
+
 Scrape ALL fight and fighter data from [ufcstats.com](http://ufcstats.com) up to the latest event and save them in `.csv` format
 
 How? Clone the repo, then open a terminal in the root folder and run the following commands:
