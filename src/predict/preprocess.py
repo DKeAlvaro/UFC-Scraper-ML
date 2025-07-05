@@ -38,6 +38,16 @@ def _parse_striking_stats(stat_str):
     except (ValueError, TypeError, AttributeError):
         return 0, 0
 
+def _to_int_safe(val):
+    """Safely converts a value to an integer, returning 0 if it's invalid or empty."""
+    if pd.isna(val):
+        return 0
+    try:
+        # handle strings with whitespace or empty strings
+        return int(str(val).strip() or 0)
+    except (ValueError, TypeError):
+        return 0
+
 def _get_fighter_history_stats(fighter_name, current_fight_date, fighter_history, fighters_df, n=5):
     """
     Calculates performance statistics for a fighter based on their last n fights.
@@ -52,16 +62,21 @@ def _get_fighter_history_stats(fighter_name, current_fight_date, fighter_history
             'avg_opp_elo_last_n': 1500, # Assume average ELO for first opponent
             'ko_percent_last_n': 0,
             'sig_str_landed_per_min_last_n': 0,
+            'takedown_accuracy_last_n': 0,
+            'sub_attempts_per_min_last_n': 0,
         }
 
     stats = {
         'wins': 0, 'ko_wins': 0, 'total_time_secs': 0,
-        'sig_str_landed': 0, 'opponent_elos': []
+        'sig_str_landed': 0, 'opponent_elos': [],
+        'td_landed': 0, 'td_attempted': 0, 'sub_attempts': 0
     }
 
     for fight in last_n_fights:
         is_fighter_1 = (fight['fighter_1'] == fighter_name)
         opponent_name = fight['fighter_2'] if is_fighter_1 else fight['fighter_1']
+        
+        f_prefix = 'f1' if is_fighter_1 else 'f2'
 
         if fight['winner'] == fighter_name:
             stats['wins'] += 1
@@ -74,18 +89,28 @@ def _get_fighter_history_stats(fighter_name, current_fight_date, fighter_history
         
         stats['total_time_secs'] += _parse_round_time_to_seconds(fight['round'], fight['time'])
         
-        sig_str_stat = fight.get(f'f1_sig_str' if is_fighter_1 else 'f2_sig_str', '0 of 0')
+        sig_str_stat = fight.get(f'{f_prefix}_sig_str', '0 of 0')
         landed, _ = _parse_striking_stats(sig_str_stat)
         stats['sig_str_landed'] += landed
 
+        td_stat = fight.get(f'{f_prefix}_td', '0 of 0')
+        td_landed, td_attempted = _parse_striking_stats(td_stat) # Can reuse this parser
+        stats['td_landed'] += td_landed
+        stats['td_attempted'] += td_attempted
+        
+        stats['sub_attempts'] += _to_int_safe(fight.get(f'{f_prefix}_sub_att'))
+
     # Final calculations
     avg_opp_elo = sum(stats['opponent_elos']) / len(stats['opponent_elos']) if stats['opponent_elos'] else 1500
+    total_minutes = stats['total_time_secs'] / 60 if stats['total_time_secs'] > 0 else 0
     
     return {
         'wins_last_n': stats['wins'],
         'avg_opp_elo_last_n': avg_opp_elo,
         'ko_percent_last_n': (stats['ko_wins'] / stats['wins']) if stats['wins'] > 0 else 0,
-        'sig_str_landed_per_min_last_n': (stats['sig_str_landed'] * 60 / stats['total_time_secs']) if stats['total_time_secs'] > 0 else 0,
+        'sig_str_landed_per_min_last_n': (stats['sig_str_landed'] / total_minutes) if total_minutes > 0 else 0,
+        'takedown_accuracy_last_n': (stats['td_landed'] / stats['td_attempted']) if stats['td_attempted'] > 0 else 0,
+        'sub_attempts_per_min_last_n': (stats['sub_attempts'] / total_minutes) if total_minutes > 0 else 0,
     }
 
 def preprocess_for_ml(fights_to_process, fighters_csv_path):
@@ -174,6 +199,9 @@ def preprocess_for_ml(fights_to_process, fighters_csv_path):
             'avg_opp_elo_last_5_diff': f1_hist_stats['avg_opp_elo_last_n'] - f2_hist_stats['avg_opp_elo_last_n'],
             'ko_percent_last_5_diff': f1_hist_stats['ko_percent_last_n'] - f2_hist_stats['ko_percent_last_n'],
             'sig_str_landed_per_min_last_5_diff': f1_hist_stats['sig_str_landed_per_min_last_n'] - f2_hist_stats['sig_str_landed_per_min_last_n'],
+            # Grappling features
+            'takedown_accuracy_last_5_diff': f1_hist_stats['takedown_accuracy_last_n'] - f2_hist_stats['takedown_accuracy_last_n'],
+            'sub_attempts_per_min_last_5_diff': f1_hist_stats['sub_attempts_per_min_last_n'] - f2_hist_stats['sub_attempts_per_min_last_n'],
         }
         feature_list.append(features_win)
         target_list.append(1)  # 1 represents a win
