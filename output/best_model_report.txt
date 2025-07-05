@@ -1,0 +1,47 @@
+--- UFC Fight Predictor: Best Model Analysis ---
+
+--- Data Division ---
+The dataset was split chronologically into two sets:
+- Training Set: Used to train the models. Contains 727 events.
+- Test Set: Used to evaluate model performance. Contains 10 events.
+
+--- Feature Explanation ---
+Each fight is converted into a feature vector representing the difference between the two fighters.
+Features include base stat differentials (elo, height, reach) and historical performance metrics
+(e.g., difference in wins, opponent ELO, and KO percentages from the last 5 fights).
+
+--- Performance Metrics ---
+The models listed below were trained on the Training Set and evaluated against the Test Set.
+'Accuracy' represents the percentage of fights in the test set that the model predicted correctly.
+Higher values for Accuracy, Balanced Accuracy, ROC AUC, and F1 Score are better.
+
+--- Model Performance Ranking ---
+                               Accuracy  Balanced Accuracy  ROC AUC  F1 Score  Time Taken
+Model                                                                                    
+ExtraTreesClassifier               0.92               0.92     0.92      0.92        3.50
+XGBClassifier                      0.90               0.90     0.90      0.90        0.47
+LGBMClassifier                     0.89               0.89     0.89      0.89        3.19
+AdaBoostClassifier                 0.89               0.89     0.89      0.89        0.61
+NuSVC                              0.89               0.89     0.89      0.89       21.76
+RandomForestClassifier             0.89               0.89     0.89      0.89        3.60
+RidgeClassifier                    0.88               0.88     0.88      0.88        0.05
+CalibratedClassifierCV             0.88               0.88     0.88      0.88        0.18
+LogisticRegression                 0.88               0.88     0.88      0.88        0.13
+LinearDiscriminantAnalysis         0.88               0.88     0.88      0.88        0.19
+BernoulliNB                        0.88               0.88     0.88      0.88        0.05
+SVC                                0.88               0.88     0.88      0.88       10.24
+RidgeClassifierCV                  0.88               0.88     0.88      0.88        0.04
+LinearSVC                          0.88               0.88     0.88      0.88        0.12
+SGDClassifier                      0.87               0.87     0.87      0.87        0.08
+BaggingClassifier                  0.86               0.86     0.86      0.86        1.14
+PassiveAggressiveClassifier        0.86               0.86     0.86      0.86        0.11
+KNeighborsClassifier               0.86               0.86     0.86      0.86        0.11
+GaussianNB                         0.86               0.86     0.86      0.86        0.04
+NearestCentroid                    0.86               0.86     0.86      0.86        0.09
+LabelSpreading                     0.82               0.82     0.82      0.82       51.25
+ExtraTreeClassifier                0.81               0.81     0.81      0.81        0.06
+DecisionTreeClassifier             0.80               0.80     0.80      0.80        0.25
+LabelPropagation                   0.80               0.80     0.80      0.80       32.01
+QuadraticDiscriminantAnalysis      0.64               0.64     0.64      0.64        0.04
+Perceptron                         0.62               0.62     0.62      0.58        0.06
+DummyClassifier                    0.50               0.50     0.50      0.33        0.04

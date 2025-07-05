@@ -1,3 +1,13 @@
+---
+title: UFC Fight Predictor
+emoji: 🥊
+colorFrom: red
+colorTo: blue
+sdk: gradio
+sdk_version: "4.28.3"
+app_file: app.py
+pinned: false
+---
 # UFC Scraper & ML
 
 Scrape ALL fight and fighter data from [ufcstats.com](http://ufcstats.com) up to the latest event and save them in `.csv` format
