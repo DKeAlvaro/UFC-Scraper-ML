@@ -3,7 +3,7 @@ import os
 import joblib
 from datetime import datetime
 
-from ..config import OUTPUT_DIR
+from ..config import MODELS_DIR
 
 def predict_new_fight(fighter1_name, fighter2_name, model_path):
     """
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--model_path', 
         type=str, 
-        default=os.path.join(OUTPUT_DIR, 'XGBoostModel.joblib'),
+        default=os.path.join(MODELS_DIR, 'XGBoostModel.joblib'),
         help="Path to the saved model file."
     )
     args = parser.parse_args()

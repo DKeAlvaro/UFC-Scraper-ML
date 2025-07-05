@@ -4,8 +4,9 @@ import sys
 from datetime import datetime
 from collections import OrderedDict
 import json
+import joblib
 
-from ..config import FIGHTS_CSV_PATH, MODEL_RESULTS_PATH
+from ..config import FIGHTS_CSV_PATH, MODEL_RESULTS_PATH, MODELS_DIR
 from .models import BaseModel
 
 class PredictionPipeline:
@@ -43,7 +44,7 @@ class PredictionPipeline:
         print(f"Testing on the last {num_test_events} events.")
 
     def run(self, detailed_report=True):
-        """Executes the full pipeline: load, train, evaluate, and report."""
+        """Executes the full pipeline: load, train, evaluate, report and save models."""
         self._load_and_split_data()
         
         eval_fights = [f for f in self.test_fights if f['winner'] not in ["Draw", "NC", ""]]
@@ -90,6 +91,36 @@ class PredictionPipeline:
             self._report_detailed_results()
         else:
             self._report_summary()
+
+        self._train_and_save_models()
+
+    def _train_and_save_models(self):
+        """Trains all models on the full dataset and saves them."""
+        print("\n\n--- Training and Saving All Models on Full Dataset ---")
+
+        if not os.path.exists(FIGHTS_CSV_PATH):
+            print(f"Error: Fights data not found at '{FIGHTS_CSV_PATH}'. Cannot save models.")
+            return
+            
+        with open(FIGHTS_CSV_PATH, 'r', encoding='utf-8') as f:
+            all_fights = list(csv.DictReader(f))
+        
+        print(f"Training models on all {len(all_fights)} available fights...")
+
+        if not os.path.exists(MODELS_DIR):
+            os.makedirs(MODELS_DIR)
+            print(f"Created directory: {MODELS_DIR}")
+
+        for model in self.models:
+            model_name = model.__class__.__name__
+            print(f"\n--- Training: {model_name} ---")
+            model.train(all_fights)
+            
+            # Sanitize and save the model
+            file_name = f"{model_name}.joblib"
+            save_path = os.path.join(MODELS_DIR, file_name)
+            joblib.dump(model, save_path)
+            print(f"Model saved successfully to {save_path}")
 
     def _report_summary(self):
         """Prints a concise summary of model performance."""
