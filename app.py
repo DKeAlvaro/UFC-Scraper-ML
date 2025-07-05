@@ -59,19 +59,19 @@ def predict_fight(model_name, fighter1_name, fighter2_name):
         if prediction_result and prediction_result.get('winner'):
             winner = prediction_result['winner']
             prob = prediction_result['probability']
-            return f"Predicted Winner: {winner} ({prob:.1%})"
+            return winner, f"{prob:.1%}"
         else:
-            return "Could not make a prediction. Is one of the fighters new or not in the dataset?"
+            return "Could not make a prediction.", ""
             
     except FileNotFoundError:
-        return f"Error: Model file '{model_name}' not found."
+        return f"Error: Model file '{model_name}' not found.", ""
     except Exception as e:
         print(f"An error occurred during prediction: {e}")
-        return f"An error occurred: {e}"
+        return f"An error occurred: {e}", ""
 
 # --- Gradio Interface ---
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
-    gr.Markdown("# UFC Fight Predictor")
+    gr.Markdown("# 🥋 UFC Fight Predictor 🥊")
     gr.Markdown("Select a prediction model and enter two fighter names to predict the outcome.")
     
     with gr.Column():
@@ -85,12 +85,15 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
             fighter2_input = gr.Textbox(label="Fighter 2", placeholder="e.g., Stipe Miocic")
     
     predict_button = gr.Button("Predict Winner")
-    output_text = gr.Textbox(label="Prediction Result", interactive=False)
+    
+    with gr.Column():
+        winner_output = gr.Textbox(label="Predicted Winner", interactive=False)
+        prob_output = gr.Textbox(label="Confidence", interactive=False)
 
     predict_button.click(
         fn=predict_fight,
         inputs=[model_dropdown, fighter1_input, fighter2_input],
-        outputs=output_text
+        outputs=[winner_output, prob_output]
     )
 
 # --- Launch the App ---
