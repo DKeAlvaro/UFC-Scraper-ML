@@ -12,15 +12,17 @@ pinned: false
 
 [![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/AlvaroMros/ufc-predictor)
 
-Scrape ALL fight and fighter data from [ufcstats.com](http://ufcstats.com) up to the latest event and save them in `.csv` format
+## Setup
 
-How? Clone the repo, then open a terminal in the root folder and run the following commands:
+Clone the repo, then open a terminal in the root folder and run the following commands:
 
 1. Install the required Python packages using pip:
 
 ```bash
 pip install -r requirements.txt
 ```
+## Scraping:
+Scrape ALL fight and fighter data from [ufcstats.com](http://ufcstats.com) up to the latest event and save them in `.csv` format 
 
 2. Then run the main script to scrape all data:
 
@@ -29,16 +31,10 @@ python -m src.scrape.main
 ```
 This command will execute the entire scraping and processing pipeline, saving the final CSV files in the `output/` directory.
 
-3. (Optional) Calculate fighter ELO ratings:
+## Train and save ML models:
 
-```bash
-python -m src.analysis.elo
-```
-This updates `ufc_fighters.csv` with ELO scores and prints the top 10 fighters.
-
-4. (Optional) Run the prediction pipeline:
+This trains a different set of ML models and saves them in `output/models`.
 
 ```bash
 python -m src.predict.main
 ```
-This runs a baseline model to predict outcomes for the most recent fights and saves a detailed report in the `output/` directory.
