@@ -14,9 +14,9 @@ pinned: false
 
 ## Setup
 
-Clone the repo, then open a terminal in the root folder and run the following commands:
+1. Clone the repo (or download it), then open a terminal in the root folder
 
-1. Install the required Python packages using pip:
+2. Install the required Python packages using pip:
 
 ```bash
 pip install -r requirements.txt
