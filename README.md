@@ -8,9 +8,7 @@ sdk_version: "4.28.3"
 app_file: app.py
 pinned: false
 ---
-# UFC Scraper & ML
-
-[![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/AlvaroMros/ufc-predictor)
+# UFC Scraper & ML [![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/AlvaroMros/ufc-predictor)
 
 ## Setup
 
