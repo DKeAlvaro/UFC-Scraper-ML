@@ -8,7 +8,7 @@ try:
     from src.config import FIGHTERS_CSV_PATH
 except ImportError:
     # Fallback for when running directly
-from ..config import FIGHTERS_CSV_PATH
+    from ..config import FIGHTERS_CSV_PATH
 
 def _clean_numeric_column(series):
     """A helper to clean string columns into numbers, handling errors."""
@@ -243,7 +243,7 @@ if __name__ == '__main__':
         from src.predict.pipeline import PredictionPipeline
     except ImportError:
         # Fallback for when running directly
-    from .pipeline import PredictionPipeline
+        from .pipeline import PredictionPipeline
     
     print("--- Running Preprocessing Example ---")
     
