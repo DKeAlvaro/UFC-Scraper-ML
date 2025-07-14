@@ -88,7 +88,7 @@ def main():
             
         sys.argv = predict_args
         try:
-        predict_main()
+            predict_main()
         finally:
             sys.argv = original_argv
 
