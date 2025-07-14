@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import json
 import time
 import concurrent.futures
-from ..config import EVENTS_JSON_PATH
+from .. import config
 
 # --- Configuration ---
 # The number of parallel threads to use for scraping fight details.
@@ -175,7 +175,7 @@ def scrape_event_details(event_url):
     event_details['fights'] = completed_fights
     return event_details
 
-def scrape_all_events():
+def scrape_all_events(json_path):
     soup = get_soup(BASE_URL)
     events = []
 
@@ -204,15 +204,60 @@ def scrape_all_events():
 
             if (i + 1) % 10 == 0:
                 print(f"--- Saving progress: {i + 1} of {total_events} events saved. ---")
-                with open(EVENTS_JSON_PATH, 'w') as f:
+                with open(json_path, 'w') as f:
                     json.dump(events, f, indent=4)
         except Exception as e:
             print(f"Could not process event {event_url}. Error: {e}")
 
     return events
 
+def scrape_latest_events(json_path, num_events=5):
+    """
+    Scrapes only the latest N events from UFC stats.
+    This is useful for incremental updates to avoid re-scraping all data.
+    
+    Args:
+        json_path (str): Path to save the latest events JSON file
+        num_events (int): Number of latest events to scrape (default: 5)
+    
+    Returns:
+        list: List of scraped event data
+    """
+    soup = get_soup(BASE_URL)
+    events = []
+
+    table = soup.find('table', class_='b-statistics__table-events')
+    if not table:
+        print("Could not find events table on the page.")
+        return []
+
+    event_rows = [row for row in table.find_all('tr', class_='b-statistics__table-row') if row.find('td')]
+    
+    # Limit to the latest N events (events are ordered chronologically with most recent first)
+    latest_event_rows = event_rows[:num_events]
+    total_events = len(latest_event_rows)
+    print(f"Found {len(event_rows)} total events. Scraping latest {total_events} events.")
+
+    for i, row in enumerate(latest_event_rows):
+        event_link_tag = row.find('a', class_='b-link b-link_style_black')
+        if not event_link_tag or not event_link_tag.has_attr('href'):
+            continue
+        
+        event_url = event_link_tag['href']
+        
+        try:
+            event_data = scrape_event_details(event_url)
+            if event_data:
+                events.append(event_data)
+            
+            print(f"Progress: {i+1}/{total_events} latest events scraped.")
+        except Exception as e:
+            print(f"Could not process event {event_url}. Error: {e}")
+
+    return events
+
 if __name__ == "__main__":
-    all_events_data = scrape_all_events()
-    with open(EVENTS_JSON_PATH, 'w') as f:
+    all_events_data = scrape_all_events(config.EVENTS_JSON_PATH)
+    with open(config.EVENTS_JSON_PATH, 'w') as f:
         json.dump(all_events_data, f, indent=4)
-    print(f"\nScraping complete. Final data saved to {EVENTS_JSON_PATH}")
+    print(f"\nScraping complete. Final data saved to {config.EVENTS_JSON_PATH}")

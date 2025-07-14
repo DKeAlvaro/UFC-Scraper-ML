@@ -19,20 +19,50 @@ pinned: false
 ```bash
 pip install -r requirements.txt
 ```
-## Scraping:
-Scrape ALL fight and fighter data from [ufcstats.com](http://ufcstats.com) up to the latest event and save them in `.csv` format 
 
-2. Then run the main script to scrape all data:
+## Usage
+
+### 1. Data Scraping
+
+**Initial Setup (First Time):**
+```bash
+python -m src.main --pipeline scrape --scrape-mode full
+```
+Scrapes all historical fight data from ufcstats.com.
+
+**Update Data (Regular Use):**
+```bash
+python -m src.main --pipeline scrape --scrape-mode update
+```
+Adds only the latest events to existing data.
+
+### 2. Fight Prediction
+
+**Use Existing Models (Fast):**
+```bash
+python -m src.main --pipeline predict
+```
+Loads saved models if available and retrains if new data available.
+
+**Force Retrain Models:**
+```bash
+python -m src.main --pipeline predict --force-retrain
+```
+Always retrains all models from scratch with latest data. This is useful for when the way training models changes
+
+### 3. Complete Pipeline
 
 ```bash
-python -m src.scrape.main
+python -m src.main --pipeline all --scrape-mode update
 ```
-This command will execute the entire scraping and processing pipeline, saving the final CSV files in the `output/` directory.
+Runs scraping (update mode), analysis, and prediction in sequence.
 
-## Train and save ML models:
+## Model Performance
 
-This trains a different set of ML models and saves them in `output/models`.
+The system tests on the latest UFC event for realistic accuracy scores (typically 50-70% for fight prediction).
 
-```bash
-python -m src.predict.main
-```
+## Output
+
+- **Data:** `output/ufc_fights.csv`, `output/ufc_fighters.csv`
+- **Models:** `output/models/*.joblib`
+- **Results:** `output/model_results.json`

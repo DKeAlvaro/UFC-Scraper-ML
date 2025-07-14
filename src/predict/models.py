@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 import sys
 import os
-from ..analysis.elo import process_fights_for_elo, INITIAL_ELO
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
@@ -9,8 +8,17 @@ from sklearn.naive_bayes import BernoulliNB
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
-from ..config import FIGHTERS_CSV_PATH
-from .preprocess import preprocess_for_ml, _get_fighter_history_stats, _calculate_age
+
+# Use absolute imports to avoid relative import issues
+try:
+    from src.analysis.elo import process_fights_for_elo, INITIAL_ELO
+    from src.config import FIGHTERS_CSV_PATH
+    from src.predict.preprocess import preprocess_for_ml, _get_fighter_history_stats, _calculate_age
+except ImportError:
+    # Fallback for when running directly
+    from ..analysis.elo import process_fights_for_elo, INITIAL_ELO
+    from ..config import FIGHTERS_CSV_PATH
+    from .preprocess import preprocess_for_ml, _get_fighter_history_stats, _calculate_age
 
 class BaseModel(ABC):
     """

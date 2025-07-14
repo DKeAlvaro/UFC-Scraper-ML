@@ -68,7 +68,7 @@ def process_fighter(fighter_data):
     time.sleep(REQUEST_DELAY)
     return fighter_data
 
-def scrape_all_fighters():
+def scrape_all_fighters(json_path):
     """Scrapes all fighters from a-z pages using parallel processing."""
     
     # Step 1: Sequentially scrape all fighter list pages. This is fast.
@@ -129,14 +129,14 @@ def scrape_all_fighters():
 
             if (i + 1) > 0 and (i + 1) % 50 == 0:
                 fighters_with_details.sort(key=lambda x: (x['last_name'], x['first_name']))
-                with open(config.FIGHTERS_JSON_PATH, 'w') as f:
+                with open(json_path, 'w') as f:
                     json.dump(fighters_with_details, f, indent=4)
                 
     fighters_with_details.sort(key=lambda x: (x['last_name'], x['first_name']))
     return fighters_with_details
 
 if __name__ == "__main__":
-    all_fighters_data = scrape_all_fighters()
+    all_fighters_data = scrape_all_fighters(config.FIGHTERS_JSON_PATH)
     if not os.path.exists(config.OUTPUT_DIR):
         os.makedirs(config.OUTPUT_DIR)
 

@@ -2,6 +2,12 @@ import pandas as pd
 import os
 import sys
 from datetime import datetime
+
+# Use absolute imports to avoid relative import issues
+try:
+    from src.config import FIGHTERS_CSV_PATH
+except ImportError:
+    # Fallback for when running directly
 from ..config import FIGHTERS_CSV_PATH
 
 def _clean_numeric_column(series):
@@ -232,6 +238,11 @@ def preprocess_for_ml(fights_to_process, fighters_csv_path):
     return X, y, metadata
 
 if __name__ == '__main__':
+    # Use absolute imports to avoid relative import issues
+    try:
+        from src.predict.pipeline import PredictionPipeline
+    except ImportError:
+        # Fallback for when running directly
     from .pipeline import PredictionPipeline
     
     print("--- Running Preprocessing Example ---")

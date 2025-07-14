@@ -3,7 +3,12 @@ import os
 import joblib
 from datetime import datetime
 
-from ..config import MODELS_DIR
+# Use absolute imports to avoid relative import issues
+try:
+    from src.config import MODELS_DIR
+except ImportError:
+    # Fallback for when running directly
+    from ..config import MODELS_DIR
 
 def predict_new_fight(fighter1_name, fighter2_name, model_path):
     """
