@@ -23,6 +23,10 @@ from src.predict.models import (
 # Import the configuration variable for the models directory for consistency.
 from src.config import MODELS_DIR
 
+# --- Model Cache ---
+# This global dictionary will store loaded models to avoid reloading them from disk.
+MODEL_CACHE = {}
+
 # --- Gradio App Setup ---
 if not os.path.exists(MODELS_DIR):
     os.makedirs(MODELS_DIR)
@@ -40,13 +44,17 @@ def predict_fight(model_name, fighter1_name, fighter2_name):
     Loads the selected model and predicts the winner of a fight.
     """
     if model_name == "No models found" or not fighter1_name or not fighter2_name:
-        return "Please select a model and enter both fighter names."
+        return "Please select a model and enter both fighter names.", ""
 
-    model_path = os.path.join(MODELS_DIR, model_name)
-    
     try:
-        print(f"Loading model: {model_name}")
-        model = joblib.load(model_path)
+        # Load model from cache or from disk if it's the first time
+        if model_name not in MODEL_CACHE:
+            print(f"Loading and caching model: {model_name}...")
+            model_path = os.path.join(MODELS_DIR, model_name)
+            MODEL_CACHE[model_name] = joblib.load(model_path)
+            print("...model cached.")
+        
+        model = MODEL_CACHE[model_name]
         
         fight = {
             'fighter_1': fighter1_name,
