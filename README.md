@@ -50,12 +50,16 @@ python -m src.main --pipeline predict --force-retrain
 ```
 Always retrains all models from scratch with latest data. This is useful for when the way training models changes
 
-### 3. Complete Pipeline
-
+#### 2.1 Complete Pipeline
 ```bash
 python -m src.main --pipeline all --scrape-mode update
 ```
 Runs scraping (update mode), analysis, and prediction in sequence.
+
+#### 2.2 Update Models
+```bash
+python -m src.main --pipeline update
+```
 
 ## Model Performance
 

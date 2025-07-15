@@ -15,8 +15,8 @@ def main():
         '--pipeline', 
         type=str, 
         default='scrape', 
-        choices=['scrape', 'analysis', 'predict', 'all'],
-        help="Pipeline to run: 'scrape', 'analysis', 'predict', or 'all'"
+        choices=['scrape', 'analysis', 'predict', 'update', 'all'],
+        help="Pipeline to run: 'scrape', 'analysis', 'predict', 'update', or 'all'"
     )
     parser.add_argument(
         '--scrape-mode', 
@@ -69,6 +69,19 @@ def main():
         print("\n=== Running ELO Analysis ===")
         from analysis.elo import main as elo_main
         elo_main()
+
+    if args.pipeline == 'update':
+        print("\n=== Running Model Update Pipeline ===")
+        try:
+            from src.predict.main import MODELS_TO_RUN
+            from src.predict.pipeline import PredictionPipeline
+        except ImportError:
+            print("Fatal: Could not import prediction modules.")
+            print("Please ensure your project structure and python path are correct.")
+            return
+
+        pipeline = PredictionPipeline(models=MODELS_TO_RUN)
+        pipeline.update_models_if_new_data()
     
     if args.pipeline in ['predict', 'all']:
         print("\n=== Running Prediction Pipeline ===")

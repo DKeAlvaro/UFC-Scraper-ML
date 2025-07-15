@@ -232,6 +232,27 @@ class PredictionPipeline:
         if should_retrain:
             self._train_and_save_models()
 
+    def update_models_if_new_data(self):
+        """
+        Checks for new data and retrains/saves all models on the full dataset if needed.
+        This does not run any evaluation.
+        """
+        print("\n--- Checking for Model Updates ---")
+        
+        # Check if any model files are missing or invalid
+        missing_models = [m for m in self.models if not self._model_exists(m)]
+        has_new_data = self._has_new_data_since_last_training()
+
+        if missing_models:
+            missing_names = [m.__class__.__name__ for m in missing_models]
+            print(f"Missing or invalid model files found for: {missing_names}.")
+            self._train_and_save_models()
+        elif has_new_data:
+            print("New data detected, retraining all models...")
+            self._train_and_save_models()
+        else:
+            print("No new data detected. Models are already up-to-date.")
+
     def _train_and_save_models(self):
         """Trains all models on the full dataset and saves them."""
         print("\n\n--- Training and Saving All Models on Full Dataset ---")

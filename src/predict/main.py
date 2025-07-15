@@ -12,6 +12,19 @@ from src.predict.models import (
     LGBMModel
 )
 
+# --- Define Models to Run ---
+# Instantiate all the models you want to evaluate here.
+MODELS_TO_RUN = [
+    EloBaselineModel(),
+    LogisticRegressionModel(),
+    XGBoostModel(),
+    SVCModel(),
+    RandomForestModel(),
+    BernoulliNBModel(),
+    LGBMModel(),
+]
+# --- End of Model Definition ---
+
 def main():
     """
     Main entry point to run the prediction pipeline.
@@ -70,7 +83,7 @@ def main():
     # --- End of Model Definition ---
 
     pipeline = PredictionPipeline(
-        models=models_to_run, 
+        models=MODELS_TO_RUN, 
         use_existing_models=use_existing_models,
         force_retrain=force_retrain
     )
