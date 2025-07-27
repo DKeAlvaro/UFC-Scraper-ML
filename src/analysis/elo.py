@@ -128,9 +128,3 @@ def main():
         for i, (fighter, elo) in enumerate(sorted_fighters[:10]):
             print(f"{i+1}. {fighter}: {round(elo)}")
         print("------------------------------------")
-
-if __name__ == '__main__':
-    # Create the directory if it doesn't exist to avoid confusion
-    if not os.path.exists('src/analysis'):
-        os.makedirs('src/analysis')
-    main() 

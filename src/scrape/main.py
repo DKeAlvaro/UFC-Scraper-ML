@@ -6,7 +6,13 @@ from .scrape_fights import scrape_all_events, scrape_latest_events
 from .scrape_fighters import scrape_all_fighters
 from .to_csv import json_to_csv, fighters_json_to_csv
 from .preprocess import preprocess_fighters_csv
-from .. import config
+from ..config import (
+    OUTPUT_DIR, 
+    FIGHTERS_JSON_PATH, 
+    EVENTS_JSON_PATH, 
+    FIGHTS_CSV_PATH, 
+    LAST_EVENT_JSON_PATH
+)
 
 def main():
     """
@@ -31,9 +37,9 @@ def main():
     args = parser.parse_args()
     
     # Ensure the output directory exists
-    if not os.path.exists(config.OUTPUT_DIR):
-        os.makedirs(config.OUTPUT_DIR)
-        print(f"Created directory: {config.OUTPUT_DIR}")
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+        print(f"Created directory: {OUTPUT_DIR}")
 
     if args.mode == 'full':
         run_full_pipeline()
@@ -48,13 +54,13 @@ def run_full_pipeline():
     
     # --- Step 1: Scrape all data from the website ---
     # This will generate fighters.json and events.json
-    scrape_all_fighters(config.FIGHTERS_JSON_PATH)
-    scrape_all_events(config.EVENTS_JSON_PATH)
+    scrape_all_fighters(FIGHTERS_JSON_PATH)
+    scrape_all_events(EVENTS_JSON_PATH)
 
     # --- Step 2: Convert the scraped JSON data to CSV format ---
     # This will generate fighters.csv and fights.csv
-    json_to_csv(config.EVENTS_JSON_PATH, config.FIGHTS_CSV_PATH)
-    fighters_json_to_csv(config.FIGHTERS_JSON_PATH, config.FIGHTERS_CSV_PATH)
+    json_to_csv(EVENTS_JSON_PATH, FIGHTS_CSV_PATH)
+    fighters_json_to_csv(FIGHTERS_JSON_PATH, FIGHTERS_CSV_PATH)
 
     # --- Step 3: Run post-processing on the generated CSV files ---
     # This cleans names, converts height, etc.
@@ -64,12 +70,12 @@ def run_full_pipeline():
     # --- Step 4: Clean up temporary JSON files ---
     print("\n--- Deleting temporary JSON files ---")
     try:
-        if os.path.exists(config.EVENTS_JSON_PATH):
-            os.remove(config.EVENTS_JSON_PATH)
-            print(f"Deleted: {config.EVENTS_JSON_PATH}")
-        if os.path.exists(config.FIGHTERS_JSON_PATH):
-            os.remove(config.FIGHTERS_JSON_PATH)
-            print(f"Deleted: {config.FIGHTERS_JSON_PATH}")
+        if os.path.exists(EVENTS_JSON_PATH):
+            os.remove(EVENTS_JSON_PATH)
+            print(f"Deleted: {EVENTS_JSON_PATH}")
+        if os.path.exists(FIGHTERS_JSON_PATH):
+            os.remove(FIGHTERS_JSON_PATH)
+            print(f"Deleted: {FIGHTERS_JSON_PATH}")
     except OSError as e:
         print(f"Error deleting JSON files: {e}")
 
@@ -86,13 +92,13 @@ def run_update_pipeline(num_events=5):
     print(f"\n=== Running UPDATE pipeline for latest {num_events} events ===")
     
     # --- Step 1: Scrape latest events only ---
-    latest_events = scrape_latest_events(config.LAST_EVENT_JSON_PATH, num_events)
+    latest_events = scrape_latest_events(LAST_EVENT_JSON_PATH, num_events)
     
     # --- Step 2: Save latest events to last_event.json (even if empty) ---
     if latest_events:
-        with open(config.LAST_EVENT_JSON_PATH, 'w') as f:
+        with open(LAST_EVENT_JSON_PATH, 'w') as f:
             json.dump(latest_events, f, indent=4)
-        print(f"Latest {len(latest_events)} events saved to {config.LAST_EVENT_JSON_PATH}")
+        print(f"Latest {len(latest_events)} events saved to {LAST_EVENT_JSON_PATH}")
     
     # --- Step 3: Always check and update from last_event.json ---
     update_fights_csv_from_last_event()
@@ -105,13 +111,13 @@ def update_fights_csv_from_last_event():
     Ensures latest events are on top and preserves data types.
     """
     # Check if last_event.json exists
-    if not os.path.exists(config.LAST_EVENT_JSON_PATH):
-        print(f"No {config.LAST_EVENT_JSON_PATH} found. Nothing to update.")
+    if not os.path.exists(LAST_EVENT_JSON_PATH):
+        print(f"No {LAST_EVENT_JSON_PATH} found. Nothing to update.")
         return
     
     # Load events from last_event.json
     try:
-        with open(config.LAST_EVENT_JSON_PATH, 'r') as f:
+        with open(LAST_EVENT_JSON_PATH, 'r') as f:
             events_from_json = json.load(f)
         
         if not events_from_json:
@@ -126,17 +132,17 @@ def update_fights_csv_from_last_event():
     
     try:
         # Check if main CSV exists
-        if os.path.exists(config.FIGHTS_CSV_PATH):
-            existing_df = pd.read_csv(config.FIGHTS_CSV_PATH)
+        if os.path.exists(FIGHTS_CSV_PATH):
+            existing_df = pd.read_csv(FIGHTS_CSV_PATH)
             existing_event_names = set(existing_df['event_name'].unique())
         else:
-            print(f"Main fights CSV ({config.FIGHTS_CSV_PATH}) not found. Creating new CSV from last_event.json.")
-            json_to_csv(config.LAST_EVENT_JSON_PATH, config.FIGHTS_CSV_PATH)
+            print(f"Main fights CSV ({FIGHTS_CSV_PATH}) not found. Creating new CSV from last_event.json.")
+            json_to_csv(LAST_EVENT_JSON_PATH, FIGHTS_CSV_PATH)
             return
         
         # Create temporary CSV from events in last_event.json
-        temp_json_path = os.path.join(config.OUTPUT_DIR, 'temp_latest.json')
-        temp_csv_path = os.path.join(config.OUTPUT_DIR, 'temp_latest.csv')
+        temp_json_path = os.path.join(OUTPUT_DIR, 'temp_latest.json')
+        temp_csv_path = os.path.join(OUTPUT_DIR, 'temp_latest.csv')
         
         with open(temp_json_path, 'w') as f:
             json.dump(events_from_json, f, indent=4)
@@ -165,8 +171,8 @@ def update_fights_csv_from_last_event():
             # Fix data types to remove .0 from numbers
             fix_data_types(combined_df)
             
-            combined_df.to_csv(config.FIGHTS_CSV_PATH, index=False)
-            print(f"Added {len(new_events_df)} new fights from {new_events_df['event_name'].nunique()} events to the TOP of {config.FIGHTS_CSV_PATH}")
+            combined_df.to_csv(FIGHTS_CSV_PATH, index=False)
+            print(f"Added {len(new_events_df)} new fights from {new_events_df['event_name'].nunique()} events to the TOP of {FIGHTS_CSV_PATH}")
         else:
             print("No new events found that aren't already in the existing CSV.")
         
@@ -179,7 +185,7 @@ def update_fights_csv_from_last_event():
     except Exception as e:
         print(f"Error updating fights CSV: {e}")
         print("Falling back to creating new CSV from last_event.json only.")
-        json_to_csv(config.LAST_EVENT_JSON_PATH, config.FIGHTS_CSV_PATH)
+        json_to_csv(LAST_EVENT_JSON_PATH, FIGHTS_CSV_PATH)
 
 def fix_data_types(df):
     """
@@ -200,6 +206,3 @@ def fix_data_types(df):
                 df[col] = df[col].str.replace(r'\.0$', '', regex=True)
                 # Convert empty strings back to original empty values
                 df[col] = df[col].replace('', '')
-
-if __name__ == '__main__':
-    main()

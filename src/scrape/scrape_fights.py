@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import json
 import time
 import concurrent.futures
-from .. import config
+from ..config import EVENTS_JSON_PATH
 
 # --- Configuration ---
 # The number of parallel threads to use for scraping fight details.
@@ -255,9 +255,3 @@ def scrape_latest_events(json_path, num_events=5):
             print(f"Could not process event {event_url}. Error: {e}")
 
     return events
-
-if __name__ == "__main__":
-    all_events_data = scrape_all_events(config.EVENTS_JSON_PATH)
-    with open(config.EVENTS_JSON_PATH, 'w') as f:
-        json.dump(all_events_data, f, indent=4)
-    print(f"\nScraping complete. Final data saved to {config.EVENTS_JSON_PATH}")

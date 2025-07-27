@@ -1,14 +1,7 @@
 import pandas as pd
 import os
-import sys
 from datetime import datetime
-
-# Use absolute imports to avoid relative import issues
-try:
-    from src.config import FIGHTERS_CSV_PATH
-except ImportError:
-    # Fallback for when running directly
-    from ..config import FIGHTERS_CSV_PATH
+from ..config import FIGHTERS_CSV_PATH
 
 def _clean_numeric_column(series):
     """A helper to clean string columns into numbers, handling errors."""
@@ -236,36 +229,3 @@ def preprocess_for_ml(fights_to_process, fighters_csv_path):
 
     print(f"Preprocessing complete. Generated {X.shape[0]} samples with {X.shape[1]} features.")
     return X, y, metadata
-
-if __name__ == '__main__':
-    # Use absolute imports to avoid relative import issues
-    try:
-        from src.predict.pipeline import PredictionPipeline
-    except ImportError:
-        # Fallback for when running directly
-        from .pipeline import PredictionPipeline
-    
-    print("--- Running Preprocessing Example ---")
-    
-    pipeline = PredictionPipeline(models=[])
-    try:
-        pipeline._load_and_split_data()
-        if pipeline.train_fights:
-            X_train, y_train, metadata_train = preprocess_for_ml(pipeline.train_fights, FIGHTERS_CSV_PATH)
-            print("\nTraining Data Shape:")
-            print("X_train:", X_train.shape)
-            print("y_train:", y_train.shape)
-            print("metadata_train:", metadata_train.shape)
-
-            print("\nLast 5 rows of X_train (showing populated historical features):")
-            print(X_train.tail())
-            
-            print("\nTarget distribution (0=Loss, 1=Win):")
-            print(y_train.value_counts())
-            
-            print("\nMetadata for last 5 rows:")
-            print(metadata_train.tail())
-
-    except FileNotFoundError as e:
-        print(e)
-        print("Please run the scraping pipeline first ('python -m src.scrape.main').")

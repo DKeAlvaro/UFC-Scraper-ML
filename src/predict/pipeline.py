@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 UFC Fight Prediction Pipeline
 
@@ -20,19 +19,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import csv
 import os
-import sys
 from datetime import datetime
 from collections import OrderedDict
 import json
 import joblib
-
-# Use absolute imports to avoid relative import issues
-try:
-    from src.config import FIGHTS_CSV_PATH, MODEL_RESULTS_PATH, MODELS_DIR, LAST_EVENT_JSON_PATH
-except ImportError:
-    # Fallback for when running directly
-    from ..config import FIGHTS_CSV_PATH, MODEL_RESULTS_PATH, MODELS_DIR, LAST_EVENT_JSON_PATH
-
+from ..config import FIGHTS_CSV_PATH, MODEL_RESULTS_PATH, MODELS_DIR, LAST_EVENT_JSON_PATH
 from .models import BaseModel
 
 class PredictionPipeline:

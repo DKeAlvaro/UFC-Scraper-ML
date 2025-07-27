@@ -1,8 +1,7 @@
 import argparse
 
-# Use absolute imports to avoid relative import issues
-from src.predict.pipeline import PredictionPipeline
-from src.predict.models import (
+from .pipeline import PredictionPipeline
+from .models import (
     EloBaselineModel, 
     LogisticRegressionModel, 
     XGBoostModel,
@@ -93,6 +92,3 @@ def main():
     except FileNotFoundError as e:
         print(f"Error: {e}")
         print("Please ensure the required data files exist. You may need to run the scraping and ELO analysis first.")
-
-if __name__ == '__main__':
-    main() 

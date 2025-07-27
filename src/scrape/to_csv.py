@@ -1,6 +1,6 @@
 import json
 import csv
-from .. import config
+from ..config import EVENTS_JSON_PATH, FIGHTS_CSV_PATH, FIGHTERS_JSON_PATH
 
 def json_to_csv(json_file_path, csv_file_path):
     try:
@@ -137,8 +137,4 @@ def fighters_json_to_csv(json_file_path, csv_file_path):
             cleaned_row = {key: clean_value(fighter_data.get(key, '')) for key in headers}
             writer.writerow(cleaned_row)
 
-    print(f"Successfully converted {json_file_path} to {csv_file_path}")
-
-if __name__ == '__main__':
-    json_to_csv(config.EVENTS_JSON_PATH, config.FIGHTS_CSV_PATH) 
-    fighters_json_to_csv(config.FIGHTERS_JSON_PATH, config.FIGHTERS_CSV_PATH) 
+    print(f"Successfully converted {json_file_path} to {csv_file_path}") 

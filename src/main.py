@@ -2,9 +2,6 @@ import argparse
 import sys
 import os
 
-# Add the current directory to Python path for imports
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 def main():
     """
     Main entry point for the UFC data pipeline.
@@ -55,7 +52,7 @@ def main():
     
     if args.pipeline in ['scrape', 'all']:
         print("=== Running Scraping Pipeline ===")
-        from scrape.main import main as scrape_main
+        from src.scrape.main import main as scrape_main
         
         # Override sys.argv to pass arguments to scrape.main
         original_argv = sys.argv
@@ -67,7 +64,7 @@ def main():
     
     if args.pipeline in ['analysis', 'all']:
         print("\n=== Running ELO Analysis ===")
-        from analysis.elo import main as elo_main
+        from src.analysis.elo import main as elo_main
         elo_main()
 
     if args.pipeline == 'update':
@@ -85,7 +82,7 @@ def main():
     
     if args.pipeline in ['predict', 'all']:
         print("\n=== Running Prediction Pipeline ===")
-        from predict.main import main as predict_main
+        from src.predict.main import main as predict_main
         
         # Override sys.argv to pass model management arguments to predict.main
         original_argv = sys.argv

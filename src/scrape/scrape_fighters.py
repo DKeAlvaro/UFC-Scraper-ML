@@ -5,7 +5,7 @@ import time
 import string
 import concurrent.futures
 import os
-from .. import config
+from ..config import FIGHTERS_JSON_PATH, OUTPUT_DIR
 
 # --- Configuration ---
 # The number of parallel threads to use for scraping fighter details.
@@ -133,14 +133,4 @@ def scrape_all_fighters(json_path):
                     json.dump(fighters_with_details, f, indent=4)
                 
     fighters_with_details.sort(key=lambda x: (x['last_name'], x['first_name']))
-    return fighters_with_details
-
-if __name__ == "__main__":
-    all_fighters_data = scrape_all_fighters(config.FIGHTERS_JSON_PATH)
-    if not os.path.exists(config.OUTPUT_DIR):
-        os.makedirs(config.OUTPUT_DIR)
-
-    with open(config.FIGHTERS_JSON_PATH, 'w') as f:
-        json.dump(all_fighters_data, f, indent=4)
-        
-    print(f"\nScraping complete. Final data for {len(all_fighters_data)} fighters saved to {config.FIGHTERS_JSON_PATH}") 
+    return fighters_with_details 

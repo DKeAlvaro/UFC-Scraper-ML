@@ -8,17 +8,9 @@ from sklearn.naive_bayes import BernoulliNB
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
-
-# Use absolute imports to avoid relative import issues
-try:
-    from src.analysis.elo import process_fights_for_elo, INITIAL_ELO
-    from src.config import FIGHTERS_CSV_PATH
-    from src.predict.preprocess import preprocess_for_ml, _get_fighter_history_stats, _calculate_age
-except ImportError:
-    # Fallback for when running directly
-    from ..analysis.elo import process_fights_for_elo, INITIAL_ELO
-    from ..config import FIGHTERS_CSV_PATH
-    from .preprocess import preprocess_for_ml, _get_fighter_history_stats, _calculate_age
+from ..analysis.elo import process_fights_for_elo, INITIAL_ELO
+from ..config import FIGHTERS_CSV_PATH
+from .preprocess import preprocess_for_ml, _get_fighter_history_stats, _calculate_age
 
 class BaseModel(ABC):
     """
