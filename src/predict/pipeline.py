@@ -149,16 +149,13 @@ class PredictionPipeline:
         print("No new data detected and all model files exist. Using existing models.")
         return False
 
-    def _load_and_split_data(self, num_test_events=1):
+    def _load_and_split_data(self, num_test_events: int = 1) -> None:
         """Loads and splits the data into chronological training and testing sets."""
         print("\n--- Loading and Splitting Data ---")
         if not os.path.exists(FIGHTS_CSV_PATH):
             raise FileNotFoundError(f"Fights data not found at '{FIGHTS_CSV_PATH}'.")
 
-        with open(FIGHTS_CSV_PATH, 'r', encoding='utf-8') as f:
-            fights = list(csv.DictReader(f))
-        
-        fights.sort(key=lambda x: datetime.strptime(x['event_date'], '%B %d, %Y'))
+        fights = self._load_fights()
         
         all_events = list(OrderedDict.fromkeys(f['event_name'] for f in fights))
         if len(all_events) < num_test_events:
@@ -171,7 +168,15 @@ class PredictionPipeline:
         print(f"Data loaded. {len(self.train_fights)} training fights, {len(self.test_fights)} testing fights.")
         print(f"Testing on the last {num_test_events} event(s): {', '.join(test_event_names)}")
 
-    def run(self, detailed_report=True):
+    def _load_fights(self) -> list:
+        """Helper method to load and sort fights from CSV."""
+        with open(FIGHTS_CSV_PATH, 'r', encoding='utf-8') as f:
+            fights = list(csv.DictReader(f))
+        
+        fights.sort(key=lambda x: datetime.strptime(x['event_date'], '%B %d, %Y'))
+        return fights
+
+    def run(self, detailed_report: bool = True) -> None:
         """Executes the full pipeline: load, train, evaluate, report and save models."""
         self._load_and_split_data()
         
@@ -349,4 +354,4 @@ class PredictionPipeline:
         # A summary is printed to the console for convenience.
         self._report_summary()
         # The detailed report is now saved to a JSON file.
-        self._save_report_to_json() 
+        self._save_report_to_json()

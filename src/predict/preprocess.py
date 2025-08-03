@@ -1,53 +1,22 @@
 import pandas as pd
 import os
 from datetime import datetime
+from typing import Dict, List, Tuple, Any, Optional
 from ..config import FIGHTERS_CSV_PATH
+from .utils import (
+    parse_round_time_to_seconds, parse_striking_stats, to_int_safe, 
+    calculate_age, prepare_fighters_data, DEFAULT_ELO, N_FIGHTS_HISTORY
+)
 
-def _clean_numeric_column(series):
-    """A helper to clean string columns into numbers, handling errors."""
-    series_str = series.astype(str)
-    return pd.to_numeric(series_str.str.replace(r'[^0-9.]', '', regex=True), errors='coerce')
 
-def _calculate_age(dob_str, fight_date_str):
-    """Calculates age in years from a date of birth string and fight date string."""
-    if pd.isna(dob_str) or not dob_str:
-        return None
-    try:
-        dob = datetime.strptime(dob_str, '%b %d, %Y')
-        fight_date = datetime.strptime(fight_date_str, '%B %d, %Y')
-        return (fight_date - dob).days / 365.25
-    except (ValueError, TypeError):
-        return None
 
-def _parse_round_time_to_seconds(round_str, time_str):
-    """Converts fight duration from round and time to total seconds."""
-    try:
-        rounds = int(round_str)
-        minutes, seconds = map(int, time_str.split(':'))
-        # Assuming 5-minute rounds for calculation simplicity
-        return ((rounds - 1) * 5 * 60) + (minutes * 60) + seconds
-    except (ValueError, TypeError, AttributeError):
-        return 0
-
-def _parse_striking_stats(stat_str):
-    """Parses striking stats string like '10 of 20' into (landed, attempted)."""
-    try:
-        landed, attempted = map(int, stat_str.split(' of '))
-        return landed, attempted
-    except (ValueError, TypeError, AttributeError):
-        return 0, 0
-
-def _to_int_safe(val):
-    """Safely converts a value to an integer, returning 0 if it's invalid or empty."""
-    if pd.isna(val):
-        return 0
-    try:
-        # handle strings with whitespace or empty strings
-        return int(str(val).strip() or 0)
-    except (ValueError, TypeError):
-        return 0
-
-def _get_fighter_history_stats(fighter_name, current_fight_date, fighter_history, fighters_df, n=5):
+def _get_fighter_history_stats(
+    fighter_name: str, 
+    current_fight_date: datetime, 
+    fighter_history: List[Dict[str, Any]], 
+    fighters_df: pd.DataFrame, 
+    n: int = N_FIGHTS_HISTORY
+) -> Dict[str, float]:
     """
     Calculates performance statistics for a fighter based on their last n fights.
     """
@@ -58,7 +27,7 @@ def _get_fighter_history_stats(fighter_name, current_fight_date, fighter_history
         # Return a default dictionary with the correct keys for a fighter with no history
         return {
             'wins_last_n': 0,
-            'avg_opp_elo_last_n': 1500, # Assume average ELO for first opponent
+            'avg_opp_elo_last_n': DEFAULT_ELO,
             'ko_percent_last_n': 0,
             'sig_str_landed_per_min_last_n': 0,
             'takedown_accuracy_last_n': 0,
@@ -84,20 +53,20 @@ def _get_fighter_history_stats(fighter_name, current_fight_date, fighter_history
 
         if opponent_name in fighters_df.index:
             opp_elo = fighters_df.loc[opponent_name, 'elo']
-            stats['opponent_elos'].append(opp_elo if pd.notna(opp_elo) else 1500)
+            stats['opponent_elos'].append(opp_elo if pd.notna(opp_elo) else DEFAULT_ELO)
         
-        stats['total_time_secs'] += _parse_round_time_to_seconds(fight['round'], fight['time'])
+        stats['total_time_secs'] += parse_round_time_to_seconds(fight['round'], fight['time'])
         
         sig_str_stat = fight.get(f'{f_prefix}_sig_str', '0 of 0')
-        landed, _ = _parse_striking_stats(sig_str_stat)
+        landed, _ = parse_striking_stats(sig_str_stat)
         stats['sig_str_landed'] += landed
 
         td_stat = fight.get(f'{f_prefix}_td', '0 of 0')
-        td_landed, td_attempted = _parse_striking_stats(td_stat) # Can reuse this parser
+        td_landed, td_attempted = parse_striking_stats(td_stat)
         stats['td_landed'] += td_landed
         stats['td_attempted'] += td_attempted
         
-        stats['sub_attempts'] += _to_int_safe(fight.get(f'{f_prefix}_sub_att'))
+        stats['sub_attempts'] += to_int_safe(fight.get(f'{f_prefix}_sub_att'))
 
     # Final calculations
     avg_opp_elo = sum(stats['opponent_elos']) / len(stats['opponent_elos']) if stats['opponent_elos'] else 1500
@@ -112,36 +81,26 @@ def _get_fighter_history_stats(fighter_name, current_fight_date, fighter_history
         'sub_attempts_per_min_last_n': (stats['sub_attempts'] / total_minutes) if total_minutes > 0 else 0,
     }
 
-def preprocess_for_ml(fights_to_process, fighters_csv_path):
+def preprocess_for_ml(
+    fights_to_process: List[Dict[str, Any]], 
+    fighters_csv_path: str
+) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
     """
     Transforms raw fight and fighter data into a feature matrix (X) and target vector (y)
     suitable for a binary classification machine learning model.
 
     Args:
-        fights_to_process (list of dict): The list of fights to process.
-        fighters_csv_path (str): Path to the CSV file with all fighter stats.
+        fights_to_process: The list of fights to process.
+        fighters_csv_path: Path to the CSV file with all fighter stats.
 
     Returns:
-        pd.DataFrame: Feature matrix X.
-        pd.Series: Target vector y.
-        pd.DataFrame: Metadata DataFrame.
+        Feature matrix X, target vector y, and metadata DataFrame.
     """
     if not os.path.exists(fighters_csv_path):
         raise FileNotFoundError(f"Fighters data not found at '{fighters_csv_path}'.")
 
     fighters_df = pd.read_csv(fighters_csv_path)
-    
-    # 1. Prepare fighters data for merging
-    fighters_prepared = fighters_df.copy()
-    fighters_prepared['full_name'] = fighters_prepared['first_name'] + ' ' + fighters_prepared['last_name']
-    
-    # Handle duplicate fighter names by keeping the first entry
-    fighters_prepared = fighters_prepared.drop_duplicates(subset=['full_name'], keep='first')
-    fighters_prepared = fighters_prepared.set_index('full_name')
-
-    for col in ['height_cm', 'reach_in', 'elo']:
-        if col in fighters_prepared.columns:
-            fighters_prepared[col] = _clean_numeric_column(fighters_prepared[col])
+    fighters_prepared = prepare_fighters_data(fighters_df)
 
     # 2. Pre-calculate fighter histories to speed up lookups
     # And convert date strings to datetime objects once

@@ -68,18 +68,7 @@ def main():
     elif use_existing_models:
         print("Using existing models if available and no new data detected.")
 
-    # --- Define Models to Run ---
-    # Instantiate all the models you want to evaluate here.
-    models_to_run = [
-        EloBaselineModel(),
-        LogisticRegressionModel(),
-        XGBoostModel(),
-        SVCModel(),
-        RandomForestModel(),
-        BernoulliNBModel(),
-        LGBMModel(),
-    ]
-    # --- End of Model Definition ---
+    # Use the already defined MODELS_TO_RUN from the top of the file
 
     pipeline = PredictionPipeline(
         models=MODELS_TO_RUN, 

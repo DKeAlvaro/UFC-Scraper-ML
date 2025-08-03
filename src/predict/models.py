@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import sys
 import os
 import pandas as pd
+from typing import Dict, Any, Optional
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.naive_bayes import BernoulliNB
@@ -10,7 +11,8 @@ from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from ..analysis.elo import process_fights_for_elo, INITIAL_ELO
 from ..config import FIGHTERS_CSV_PATH
-from .preprocess import preprocess_for_ml, _get_fighter_history_stats, _calculate_age
+from .preprocess import preprocess_for_ml, _get_fighter_history_stats
+from .utils import calculate_age, prepare_fighters_data, DEFAULT_ELO
 
 class BaseModel(ABC):
     """
@@ -53,7 +55,7 @@ class EloBaselineModel(BaseModel):
         self.fighters_df['full_name'] = self.fighters_df['first_name'] + ' ' + self.fighters_df['last_name']
         self.fighters_df = self.fighters_df.drop_duplicates(subset=['full_name']).set_index('full_name')
 
-    def predict(self, fight):
+    def predict(self, fight: Dict[str, Any]) -> Dict[str, Optional[float]]:
         """Predicts the winner based on ELO and calculates win probability."""
         f1_name, f2_name = fight['fighter_1'], fight['fighter_2']
         
@@ -85,7 +87,7 @@ class BaseMLModel(BaseModel):
         self.fighters_df = None
         self.fighter_histories = {}
 
-    def train(self, train_fights):
+    def train(self, train_fights: List[Dict[str, Any]]) -> None:
         """
         Trains the machine learning model. This involves loading fighter data,
         pre-calculating histories, and fitting the model on the preprocessed data.
@@ -93,12 +95,7 @@ class BaseMLModel(BaseModel):
         print(f"--- Training {self.model.__class__.__name__} ---")
         
         # 1. Prepare data for prediction-time feature generation
-        self.fighters_df = pd.read_csv(FIGHTERS_CSV_PATH)
-        self.fighters_df['full_name'] = self.fighters_df['first_name'] + ' ' + self.fighters_df['last_name']
-        self.fighters_df = self.fighters_df.drop_duplicates(subset=['full_name']).set_index('full_name')
-        for col in ['height_cm', 'reach_in', 'elo']:
-            if col in self.fighters_df.columns:
-                self.fighters_df[col] = pd.to_numeric(self.fighters_df[col], errors='coerce')
+        self.fighters_df = prepare_fighters_data(pd.read_csv(FIGHTERS_CSV_PATH))
 
         # 2. Pre-calculate fighter histories
         train_fights_with_dates = []
@@ -136,8 +133,8 @@ class BaseMLModel(BaseModel):
         f1_hist_stats = _get_fighter_history_stats(f1_name, fight_date, f1_hist, self.fighters_df)
         f2_hist_stats = _get_fighter_history_stats(f2_name, fight_date, f2_hist, self.fighters_df)
         
-        f1_age = _calculate_age(f1_stats.get('dob'), fight['event_date'])
-        f2_age = _calculate_age(f2_stats.get('dob'), fight['event_date'])
+        f1_age = calculate_age(f1_stats.get('dob'), fight['event_date'])
+        f2_age = calculate_age(f2_stats.get('dob'), fight['event_date'])
 
         features = {
             'elo_diff': f1_stats.get('elo', 1500) - f2_stats.get('elo', 1500),
@@ -194,4 +191,4 @@ class BernoulliNBModel(BaseMLModel):
 class LGBMModel(BaseMLModel):
     """A thin wrapper for LightGBM's LGBMClassifier."""
     def __init__(self):
-        super().__init__(model=LGBMClassifier(random_state=42)) 
+        super().__init__(model=LGBMClassifier(random_state=42))
