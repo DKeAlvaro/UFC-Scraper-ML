@@ -55,6 +55,11 @@ def main():
         default=False,
         help="Force retrain all models even if no new data is available."
     )
+    parser.add_argument(
+        '--kfold',
+        action='store_true',
+        help='Run 3-fold CV instead of standard split.'
+    )
     args = parser.parse_args()
 
     # Handle conflicting arguments
@@ -75,9 +80,15 @@ def main():
         use_existing_models=use_existing_models,
         force_retrain=force_retrain
     )
-    
     try:
-        pipeline.run(detailed_report=(args.report == 'detailed'))
+        if args.kfold:
+            cv_results = pipeline.run_kfold_cv(k=3, holdout_events=1)
+            print(cv_results)
+        else:
+            pipeline.run(detailed_report=(args.report == 'detailed'))
     except FileNotFoundError as e:
         print(f"Error: {e}")
         print("Please ensure the required data files exist. You may need to run the scraping and ELO analysis first.")
+
+if __name__ == '__main__':
+    main()

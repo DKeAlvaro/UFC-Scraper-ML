@@ -1,14 +1,8 @@
 import pandas as pd
-import os
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Any
 
-# Constants
-DEFAULT_ELO = 1500
-DEFAULT_AGE = 0
-DEFAULT_FIGHT_TIME = 0
-DEFAULT_ROUNDS_DURATION = 5 * 60  # 5 minutes per round
-N_FIGHTS_HISTORY = 5
+from .config import DEFAULT_ROUNDS_DURATION
 
 def clean_numeric_column(series: pd.Series) -> pd.Series:
     """A helper to clean string columns into numbers, handling errors."""

@@ -12,7 +12,8 @@ from lightgbm import LGBMClassifier
 from ..analysis.elo import process_fights_for_elo, INITIAL_ELO
 from ..config import FIGHTERS_CSV_PATH
 from .preprocess import preprocess_for_ml, _get_fighter_history_stats
-from .utils import calculate_age, prepare_fighters_data, DEFAULT_ELO
+from .utils import calculate_age, prepare_fighters_data
+from .config import DEFAULT_ELO
 
 class BaseModel(ABC):
     """
@@ -87,7 +88,7 @@ class BaseMLModel(BaseModel):
         self.fighters_df = None
         self.fighter_histories = {}
 
-    def train(self, train_fights: List[Dict[str, Any]]) -> None:
+    def train(self, train_fights: list[dict[str, any]]) -> None:
         """
         Trains the machine learning model. This involves loading fighter data,
         pre-calculating histories, and fitting the model on the preprocessed data.

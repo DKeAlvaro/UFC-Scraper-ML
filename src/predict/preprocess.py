@@ -1,22 +1,21 @@
 import pandas as pd
 import os
 from datetime import datetime
-from typing import Dict, List, Tuple, Any, Optional
-from ..config import FIGHTERS_CSV_PATH
 from .utils import (
     parse_round_time_to_seconds, parse_striking_stats, to_int_safe, 
-    calculate_age, prepare_fighters_data, DEFAULT_ELO, N_FIGHTS_HISTORY
+    calculate_age, prepare_fighters_data
 )
+from .config import DEFAULT_ELO, N_FIGHTS_HISTORY
 
 
 
 def _get_fighter_history_stats(
     fighter_name: str, 
     current_fight_date: datetime, 
-    fighter_history: List[Dict[str, Any]], 
+    fighter_history: list[dict[str, any]], 
     fighters_df: pd.DataFrame, 
     n: int = N_FIGHTS_HISTORY
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Calculates performance statistics for a fighter based on their last n fights.
     """
@@ -82,9 +81,9 @@ def _get_fighter_history_stats(
     }
 
 def preprocess_for_ml(
-    fights_to_process: List[Dict[str, Any]], 
+    fights_to_process: list[dict[str, any]], 
     fighters_csv_path: str
-) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
     """
     Transforms raw fight and fighter data into a feature matrix (X) and target vector (y)
     suitable for a binary classification machine learning model.
@@ -135,8 +134,8 @@ def preprocess_for_ml(
         if isinstance(f2_stats, pd.DataFrame): f2_stats = f2_stats.iloc[0]
 
         # Calculate ages for both fighters
-        f1_age = _calculate_age(f1_stats.get('dob'), fight['event_date'])
-        f2_age = _calculate_age(f2_stats.get('dob'), fight['event_date'])
+        f1_age = calculate_age(f1_stats.get('dob'), fight['event_date'])
+        f2_age = calculate_age(f2_stats.get('dob'), fight['event_date'])
 
         # Get historical stats for both fighters
         f1_hist_stats = _get_fighter_history_stats(f1_name, fight['date_obj'], fighter_histories.get(f1_name, []), fighters_prepared)

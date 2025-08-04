@@ -25,6 +25,9 @@ import json
 import joblib
 from ..config import FIGHTS_CSV_PATH, MODEL_RESULTS_PATH, MODELS_DIR, LAST_EVENT_JSON_PATH
 from .models import BaseModel
+from sklearn.model_selection import KFold
+import mlflow
+import mlflow.sklearn
 
 class PredictionPipeline:
     """
@@ -247,6 +250,72 @@ class PredictionPipeline:
         # Only train and save models if retraining was performed
         if should_retrain:
             self._train_and_save_models()
+
+    def run_kfold_cv(self, k: int = 3, holdout_events: int = 1):
+        """Performs k-fold cross-validation where each fold is a set of events.
+        Within each fold, we keep the last *holdout_events* for testing."""
+        fights = self._load_fights()
+
+        # Build an ordered list of unique events
+        event_list = list(OrderedDict.fromkeys(f['event_name'] for f in fights))
+
+        # Initialize KFold splitter on events
+        kf = KFold(n_splits=k, shuffle=True, random_state=42)
+
+        all_fold_metrics = []
+        for fold_idx, (train_event_idx, test_event_idx) in enumerate(kf.split(event_list), start=1):
+            train_events = [event_list[i] for i in train_event_idx]
+
+            # Collect fights that belong to the training events
+            fold_fights = [f for f in fights if f['event_name'] in train_events]
+
+            # Inside this fold, reserve the last `holdout_events` events for testing
+            fold_events_ordered = list(OrderedDict.fromkeys(f['event_name'] for f in fold_fights))
+            test_events = fold_events_ordered[-holdout_events:]
+
+            train_set = [f for f in fold_fights if f['event_name'] not in test_events]
+            test_set  = [f for f in fold_fights if f['event_name'] in test_events]
+
+            # Start an MLflow run for the current fold
+            mlflow.set_experiment("UFC_KFold_CV")
+            with mlflow.start_run(run_name=f"fold_{fold_idx}"):
+                # Log meta information about the fold
+                mlflow.log_param("fold", fold_idx)
+                mlflow.log_param("train_events", len(train_events))
+                mlflow.log_param("test_events", holdout_events)
+
+                fold_results = {}
+                for model in self.models:
+                    model_name = model.__class__.__name__
+
+                    # Train and evaluate
+                    model.train(train_set)
+                    correct = 0
+                    total_fights = 0
+                    for fight in test_set:
+                        if fight['winner'] not in ["Draw", "NC", ""]:
+                            prediction = model.predict(fight)
+                            if prediction.get('winner') == fight['winner']:
+                                correct += 1
+                            total_fights += 1
+
+                    acc = correct / total_fights if total_fights > 0 else 0.0
+                    fold_results[model_name] = acc
+
+                    # Log metrics and register model to appear in MLflow Models tab
+                    mlflow.log_metric(f"accuracy_{model_name}", acc)
+                    mlflow.log_metric(f"total_fights_{model_name}", total_fights)
+                    
+                    # Register the model with MLflow to appear in Models tab
+                    mlflow.sklearn.log_model(
+                        model, 
+                        f"model_{model_name}",
+                        registered_model_name=f"{model_name}_UFC_Model"
+                    )
+
+                all_fold_metrics.append(fold_results)
+
+        return all_fold_metrics
 
     def update_models_if_new_data(self):
         """
