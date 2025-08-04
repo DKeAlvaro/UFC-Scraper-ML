@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import sys
 import os
 import pandas as pd
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.naive_bayes import BernoulliNB
@@ -88,7 +88,7 @@ class BaseMLModel(BaseModel):
         self.fighters_df = None
         self.fighter_histories = {}
 
-    def train(self, train_fights: list[dict[str, any]]) -> None:
+    def train(self, train_fights: List[Dict[str, Any]]) -> None:
         """
         Trains the machine learning model. This involves loading fighter data,
         pre-calculating histories, and fitting the model on the preprocessed data.

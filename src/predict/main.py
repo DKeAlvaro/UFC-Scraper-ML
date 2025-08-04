@@ -16,9 +16,9 @@ from .models import (
 MODELS_TO_RUN = [
     EloBaselineModel(),
     LogisticRegressionModel(),
-    XGBoostModel(),
-    SVCModel(),
-    RandomForestModel(),
+    # XGBoostModel(),
+    # SVCModel(),
+    # RandomForestModel(),
     BernoulliNBModel(),
     LGBMModel(),
 ]
@@ -58,7 +58,7 @@ def main():
     parser.add_argument(
         '--kfold',
         action='store_true',
-        help='Run 3-fold CV instead of standard split.'
+        help='Run 10-fold CV instead of standard split.'
     )
     args = parser.parse_args()
 

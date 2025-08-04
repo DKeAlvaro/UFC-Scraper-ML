@@ -291,27 +291,17 @@ class PredictionPipeline:
                     # Train and evaluate
                     model.train(train_set)
                     correct = 0
-                    total_fights = 0
                     for fight in test_set:
-                        if fight['winner'] not in ["Draw", "NC", ""]:
-                            prediction = model.predict(fight)
-                            if prediction.get('winner') == fight['winner']:
-                                correct += 1
-                            total_fights += 1
+                        prediction = model.predict(fight)
+                        if prediction.get('winner') == fight['winner']:
+                            correct += 1
 
-                    acc = correct / total_fights if total_fights > 0 else 0.0
+                    acc = correct / len(test_set) if test_set else 0.0
                     fold_results[model_name] = acc
 
-                    # Log metrics and register model to appear in MLflow Models tab
+                    # Log metrics and model artifact
                     mlflow.log_metric(f"accuracy_{model_name}", acc)
-                    mlflow.log_metric(f"total_fights_{model_name}", total_fights)
-                    
-                    # Register the model with MLflow to appear in Models tab
-                    mlflow.sklearn.log_model(
-                        model, 
-                        f"model_{model_name}",
-                        registered_model_name=f"{model_name}_UFC_Model"
-                    )
+                    mlflow.sklearn.log_model(model, f"model_{model_name}")
 
                 all_fold_metrics.append(fold_results)
 
