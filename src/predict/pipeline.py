@@ -190,6 +190,9 @@ class PredictionPipeline:
 
         should_retrain = self._should_retrain_models()
         
+        # Track best model across all evaluations
+        best_model_info = {'accuracy': 0, 'model_name': '', 'model': None}
+        
         for i, model in enumerate(self.models):
             model_name = model.__class__.__name__
             print(f"\n--- Evaluating Model: {model_name} ---")
@@ -241,6 +244,21 @@ class PredictionPipeline:
                 'total_fights': len(eval_fights),
                 'model_status': model_status
             }
+            
+            # Track best model
+            if accuracy > best_model_info['accuracy']:
+                best_model_info['accuracy'] = accuracy
+                best_model_info['model_name'] = model_name
+                best_model_info['model'] = model
+
+        # Log best model to MLflow
+        if best_model_info['model'] is not None:
+            mlflow.set_experiment("UFC_Best_Models")
+            with mlflow.start_run(run_name="best_model_evaluation"):
+                mlflow.log_metric("best_accuracy", best_model_info['accuracy'])
+                mlflow.log_param("model_type", best_model_info['model_name'])
+                mlflow.sklearn.log_model(best_model_info['model'], "best_model")
+                print(f"Best model logged to MLflow: {best_model_info['model_name']} with {best_model_info['accuracy']:.2f}% accuracy")
 
         if detailed_report:
             self._report_detailed_results()
@@ -249,7 +267,7 @@ class PredictionPipeline:
 
         # Only train and save models if retraining was performed
         if should_retrain:
-            self._train_and_save_models()
+            self._train_and_save_best_model(best_model_info)
 
     def run_kfold_cv(self, k: int = 3, holdout_events: int = 1):
         """Performs k-fold cross-validation where each fold is a set of events.
@@ -262,6 +280,9 @@ class PredictionPipeline:
         # Initialize KFold splitter on events
         kf = KFold(n_splits=k, shuffle=True, random_state=42)
 
+        # Track best model across all folds
+        best_model_info = {'accuracy': 0, 'model_name': '', 'model': None}
+        
         all_fold_metrics = []
         for fold_idx, (train_event_idx, test_event_idx) in enumerate(kf.split(event_list), start=1):
             train_events = [event_list[i] for i in train_event_idx]
@@ -298,19 +319,32 @@ class PredictionPipeline:
 
                     acc = correct / len(test_set) if test_set else 0.0
                     fold_results[model_name] = acc
-
-                    # Log metrics and model artifact
                     mlflow.log_metric(f"accuracy_{model_name}", acc)
-                    mlflow.sklearn.log_model(model, f"model_{model_name}")
+
+                    # Update best model tracking
+                    if acc > best_model_info['accuracy']:
+                        best_model_info['accuracy'] = acc
+                        best_model_info['model_name'] = model_name
+                        best_model_info['model'] = model
 
                 all_fold_metrics.append(fold_results)
 
-        return all_fold_metrics
+        # Log the overall best model across all folds
+        if best_model_info['model'] is not None:
+            mlflow.set_experiment("UFC_Best_Models")
+            with mlflow.start_run(run_name="kfold_best_model"):
+                mlflow.log_metric("best_accuracy", best_model_info['accuracy'])
+                mlflow.log_param("model_type", best_model_info['model_name'])
+                mlflow.log_param("k_folds", k)
+                mlflow.sklearn.log_model(best_model_info['model'], "best_model")
+                print(f"Overall best model from k-fold CV: {best_model_info['model_name']} with {best_model_info['accuracy']:.2%} accuracy")
+
+        return all_fold_metrics, best_model_info
 
     def update_models_if_new_data(self):
         """
-        Checks for new data and retrains/saves all models on the full dataset if needed.
-        This does not run any evaluation.
+        Checks for new data and retrains/saves the best model on the full dataset if needed.
+        This runs a quick evaluation to determine the best model.
         """
         print("\n--- Checking for Model Updates ---")
         
@@ -318,28 +352,50 @@ class PredictionPipeline:
         missing_models = [m for m in self.models if not self._model_exists(m)]
         has_new_data = self._has_new_data_since_last_training()
 
-        if missing_models:
-            missing_names = [m.__class__.__name__ for m in missing_models]
-            print(f"Missing or invalid model files found for: {missing_names}.")
-            self._train_and_save_models()
-        elif has_new_data:
-            print("New data detected, retraining all models...")
-            self._train_and_save_models()
+        if missing_models or has_new_data:
+            print("Running quick evaluation to find best model...")
+            
+            # Quick evaluation to find best model
+            self._load_and_split_data()
+            eval_fights = [f for f in self.test_fights if f['winner'] not in ["Draw", "NC", ""]]
+            
+            best_model_info = {'accuracy': 0, 'model_name': '', 'model': None}
+            
+            for model in self.models:
+                model_name = model.__class__.__name__
+                print(f"Evaluating {model_name}...")
+                
+                model.train(self.train_fights)
+                correct = 0
+                for fight in eval_fights:
+                    prediction = model.predict(fight)
+                    if prediction.get('winner') == fight['winner']:
+                        correct += 1
+                
+                accuracy = (correct / len(eval_fights)) * 100 if eval_fights else 0
+                
+                if accuracy > best_model_info['accuracy']:
+                    best_model_info['accuracy'] = accuracy
+                    best_model_info['model_name'] = model_name
+                    best_model_info['model'] = model
+            
+            print(f"Best model: {best_model_info['model_name']} with {best_model_info['accuracy']:.2f}% accuracy")
+            self._train_and_save_best_model(best_model_info)
         else:
             print("No new data detected. Models are already up-to-date.")
 
-    def _train_and_save_models(self):
-        """Trains all models on the full dataset and saves them."""
-        print("\n\n--- Training and Saving All Models on Full Dataset ---")
+    def _train_and_save_best_model(self, best_model_info):
+        """Trains only the best performing model on the full dataset and saves it."""
+        print("\n\n--- Training and Saving Best Model on Full Dataset ---")
 
         if not os.path.exists(FIGHTS_CSV_PATH):
-            print(f"Error: Fights data not found at '{FIGHTS_CSV_PATH}'. Cannot save models.")
+            print(f"Error: Fights data not found at '{FIGHTS_CSV_PATH}'. Cannot save model.")
             return
             
         with open(FIGHTS_CSV_PATH, 'r', encoding='utf-8') as f:
             all_fights = list(csv.DictReader(f))
         
-        print(f"Training models on all {len(all_fights)} available fights...")
+        print(f"Training best model on all {len(all_fights)} available fights...")
 
         if not os.path.exists(MODELS_DIR):
             os.makedirs(MODELS_DIR)
@@ -352,21 +408,25 @@ class PredictionPipeline:
             latest_event_name = latest_fight['event_name']
             latest_event_date = latest_fight['event_date']
 
-        for model in self.models:
-            model_name = model.__class__.__name__
-            print(f"\n--- Training: {model_name} ---")
+        if best_model_info['model'] is not None:
+            model = best_model_info['model']
+            model_name = best_model_info['model_name']
+            
+            print(f"\n--- Training Best Model: {model_name} ---")
             model.train(all_fights)
             
-            # Sanitize and save the model
-            file_name = f"{model_name}.joblib"
+            # Sanitize and save the best model
+            file_name = f"best_{model_name}_{best_model_info['accuracy']:.2f}%.joblib"
             save_path = os.path.join(MODELS_DIR, file_name)
             joblib.dump(model, save_path)
-            print(f"Model saved successfully to {save_path}")
+            print(f"Best model saved successfully to {save_path} with {best_model_info['accuracy']:.2f}% accuracy")
 
-        # Save the last trained event info
-        if all_fights:
-            self._save_last_trained_event(latest_event_name, latest_event_date)
-            print(f"Updated last trained event: {latest_event_name} ({latest_event_date})")
+            # Save the last trained event info
+            if all_fights:
+                self._save_last_trained_event(latest_event_name, latest_event_date)
+                print(f"Updated last trained event: {latest_event_name} ({latest_event_date})")
+        else:
+            print("No best model found to train and save.")
 
     def _report_summary(self):
         """Prints a concise summary of model performance."""
